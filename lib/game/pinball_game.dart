@@ -1,11 +1,11 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'dart:ui' as ui;
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
+import '../audio/pinball_audio.dart';
 import 'table_data.dart';
 
 const double _boardWidth = 400;
@@ -46,11 +46,11 @@ class _Ball {
 }
 
 class _Segment {
-  const _Segment(this.a, this.b, {this.bounce = 0.84});
+  const _Segment(this.a, this.b);
 
   final Offset a;
   final Offset b;
-  final double bounce;
+  final double bounce = 0.84;
 }
 
 class _Bumper {
@@ -62,10 +62,10 @@ class _Bumper {
 }
 
 class _Impact {
-  _Impact(this.center, this.color, {this.duration = 0.32, this.size = 1});
+  _Impact(this.center, this.color, {this.size = 1});
   final Offset center;
   final Color color;
-  final double duration;
+  final double duration = 0.32;
   final double size;
   double age = 0;
 }
@@ -73,21 +73,22 @@ class _Impact {
 /// Early playable interaction prototype. The final physics implementation will
 /// use Forge2D bodies and joints after a Codespace compile/playtest pass.
 class PinballGame extends FlameGame {
-  PinballGame({required this.table, required this.onGameFinished})
-      : hud = ValueNotifier<PinballHud>(
-          PinballHud(
-            score: 0,
-            balls: 3,
-            mode: table.modeNames.first,
-            isReady: true,
-            isPaused: false,
-            isMultiball: false,
-            awardLabel: '',
-          ),
-        );
+  PinballGame({required this.table, required this.onGameFinished, this.audio})
+    : hud = ValueNotifier<PinballHud>(
+        PinballHud(
+          score: 0,
+          balls: 3,
+          mode: table.modeNames.first,
+          isReady: true,
+          isPaused: false,
+          isMultiball: false,
+          awardLabel: '',
+        ),
+      );
 
   final PinballTableInfo table;
   final ValueChanged<int> onGameFinished;
+  final PinballAudio? audio;
   final ValueNotifier<PinballHud> hud;
   final math.Random _random = math.Random();
   final List<_Ball> _balls = <_Ball>[];
@@ -97,6 +98,8 @@ class PinballGame extends FlameGame {
   final Map<int, double> _bumperLastGlow = <int, double>{};
   ui.Image? _ballSprite;
   ui.Image? _bumperSprite;
+  ui.Image? _backplateSprite;
+  ui.Image? _hazardSprite;
   bool _spritesReleased = false;
 
   bool leftPressed = false;
@@ -129,7 +132,24 @@ class PinballGame extends FlameGame {
     _configureTable();
     _ballSprite = await _loadSprite('assets/gameplay/steel_ball.png', 128);
     _bumperSprite = await _loadSprite(
-        'assets/gameplay/bumper_${table.universe.name}.png', 192);
+      'assets/gameplay/bumper_${table.universe.name}.png',
+      192,
+    );
+    _backplateSprite = await _loadSprite(
+      'assets/backplates/${table.universe.name}.png',
+      512,
+    );
+    final hazardAsset = switch (table.universe) {
+      PinballUniverseId.celestial when table.variant == 0 =>
+        'assets/gameplay/portal_celestial.png',
+      PinballUniverseId.neon when table.variant == 2 =>
+        'assets/gameplay/reactor_neon.png',
+      PinballUniverseId.clockwork when table.variant != 1 =>
+        'assets/gameplay/gear_clockwork.png',
+      _ => null,
+    };
+    if (hazardAsset != null)
+      _hazardSprite = await _loadSprite(hazardAsset, 192);
     if (_spritesReleased) return;
     _prepareBall();
   }
@@ -138,7 +158,9 @@ class PinballGame extends FlameGame {
     try {
       final data = await rootBundle.load(asset);
       final codec = await ui.instantiateImageCodec(
-          data.buffer.asUint8List(), targetWidth: targetWidth);
+        data.buffer.asUint8List(),
+        targetWidth: targetWidth,
+      );
       final frame = await codec.getNextFrame();
       codec.dispose();
       if (_spritesReleased) {
@@ -146,8 +168,9 @@ class PinballGame extends FlameGame {
         return null;
       }
       return frame.image;
-    } catch (_) {
-      // Playable vector fallback when an art file is absent or fails to decode.
+    } catch (error) {
+      // Keep playable fallbacks, but surface missing asset declarations in logs.
+      debugPrint('PINBALL ASSET FAILED: $asset ($error)');
       return null;
     }
   }
@@ -156,8 +179,12 @@ class PinballGame extends FlameGame {
     _spritesReleased = true;
     _ballSprite?.dispose();
     _bumperSprite?.dispose();
+    _backplateSprite?.dispose();
+    _hazardSprite?.dispose();
     _ballSprite = null;
     _bumperSprite = null;
+    _backplateSprite = null;
+    _hazardSprite = null;
   }
 
   void _configureTable() {
@@ -322,6 +349,7 @@ class PinballGame extends FlameGame {
     }
     if (didLaunch && !reducedMotion) _cinematicTime = 0;
     if (didLaunch) _pulse(const Offset(352, 651), table.accent, size: 1.8);
+    if (didLaunch) audio?.play(PinballSound.launch);
     _notifyHud();
   }
 
@@ -354,7 +382,14 @@ class PinballGame extends FlameGame {
 
   void _notifyHud() {
     if (_finished && hud.value.balls == 0) return;
-    final modeIndex = _hits < 4 ? 0 : _hits < 10 ? 1 : _hits < 18 ? 2 : 3;
+    final modeIndex =
+        _hits < 4
+            ? 0
+            : _hits < 10
+            ? 1
+            : _hits < 18
+            ? 2
+            : 3;
     hud.value = PinballHud(
       score: _score,
       balls: _ballsToPlay,
@@ -401,8 +436,10 @@ class PinballGame extends FlameGame {
     for (final ball in List<_Ball>.of(_balls)) {
       if (ball.inShooter) continue;
       ball.portalCooldown = math.max(0.0, ball.portalCooldown - dt);
-      ball.velocity = Offset(ball.velocity.dx * 0.9994,
-          ball.velocity.dy + 670 * dt);
+      ball.velocity = Offset(
+        ball.velocity.dx * 0.9994,
+        ball.velocity.dy + 670 * dt,
+      );
       final speed = ball.velocity.distance;
       if (speed > 1600) ball.velocity = ball.velocity * (1600 / speed);
       ball.position += ball.velocity * dt;
@@ -418,9 +455,10 @@ class PinballGame extends FlameGame {
         final delta = ball.position - bumper.center;
         final limit = bumper.radius + _ballRadius;
         if (delta.distance >= limit) continue;
-        final normal = delta.distance < 0.001
-            ? const Offset(0, -1)
-            : delta / delta.distance;
+        final normal =
+            delta.distance < 0.001
+                ? const Offset(0, -1)
+                : delta / delta.distance;
         ball.position = bumper.center + normal * limit;
         final dot = _dot(ball.velocity, normal);
         ball.velocity -= normal * (2.0 * math.min(0.0, dot));
@@ -430,14 +468,21 @@ class PinballGame extends FlameGame {
           _bumperLastGlow[i] = _time;
           _pulse(bumper.center, table.secondary, size: 1.6);
           _shake = reducedMotion ? 0.0 : math.max(_shake, 0.16);
+          audio?.play(switch (table.universe) {
+            PinballUniverseId.celestial => PinballSound.bumperCelestial,
+            PinballUniverseId.neon => PinballSound.bumperNeon,
+            PinballUniverseId.clockwork => PinballSound.bumperClockwork,
+          });
           _registerHit(bumper.value);
         }
       }
       _specialBehavior(ball);
 
-      if (ball.position.dy > 745 || ball.position.dx < -50 ||
+      if (ball.position.dy > 745 ||
+          ball.position.dx < -50 ||
           ball.position.dx > 450) {
         _balls.remove(ball);
+        audio?.play(PinballSound.drain);
       }
 
       ball.trail.add(ball.position);
@@ -448,6 +493,7 @@ class PinballGame extends FlameGame {
       if (_ballSaverUntil > _time) {
         _ballSaverUntil = 0;
         _announce('BALL SAVED', seconds: 1.8);
+        audio?.play(PinballSound.award);
         _pulse(const Offset(200, 678), table.accent, size: 2.8);
         _prepareBall();
         return;
@@ -485,13 +531,16 @@ class PinballGame extends FlameGame {
         }
       case PinballUniverseId.neon:
         if (table.variant == 0) {
-          if (ball.position.dy > 390 && ball.position.dy < 402 &&
-              ball.position.dx > 150 && ball.position.dx < 250 &&
+          if (ball.position.dy > 390 &&
+              ball.position.dy < 402 &&
+              ball.position.dx > 150 &&
+              ball.position.dx < 250 &&
               ball.velocity.dy > 30) {
             ball.velocity = Offset(ball.velocity.dx * 1.15, -740);
             if (ball.portalCooldown == 0) {
               ball.portalCooldown = 0.55;
               _pulse(const Offset(200, 391), table.accent, size: 2);
+              audio?.play(PinballSound.boost);
               _registerHit(350);
             }
           }
@@ -507,36 +556,48 @@ class PinballGame extends FlameGame {
           _movingGear(ball, Offset(200 + 36 * math.sin(_time * 1.5), 433));
         } else if (table.variant == 1) {
           if (_time % 4.8 < 2.8) {
-            _movingBarrier(ball, const Offset(127, 457),
-                const Offset(273, 457));
+            _movingBarrier(
+              ball,
+              const Offset(127, 457),
+              const Offset(273, 457),
+            );
           }
         } else {
           final shift = 38 * math.sin(_time * 1.22);
-          _movingBarrier(ball, Offset(86 + shift, 375),
-              Offset(170 + shift, 375));
+          _movingBarrier(
+            ball,
+            Offset(86 + shift, 375),
+            Offset(170 + shift, 375),
+          );
           _movingGear(ball, Offset(255 - shift * 0.6, 471));
         }
     }
   }
 
   void _portal(_Ball ball, Offset entrance, Offset exit) {
-    if (ball.portalCooldown > 0 ||
-        (ball.position - entrance).distance > 23) return;
+    if (ball.portalCooldown > 0 || (ball.position - entrance).distance > 23)
+      return;
     ball.position = exit;
     ball.velocity = const Offset(-120, -500);
     ball.portalCooldown = 1.1;
     _pulse(entrance, table.secondary, size: 2.3);
     _pulse(exit, table.accent, size: 2.3);
+    audio?.play(PinballSound.portal);
     _registerHit(1200);
   }
 
-  void _gravityWell(_Ball ball, Offset center,
-      {required double radius, required double pull}) {
+  void _gravityWell(
+    _Ball ball,
+    Offset center, {
+    required double radius,
+    required double pull,
+  }) {
     final delta = center - ball.position;
     final distance = delta.distance;
     if (distance < 18 || distance > radius) return;
     final factor = 1 - distance / radius;
     ball.velocity += delta / distance * (pull * factor / 120);
+    if (distance < radius * 0.35) audio?.play(PinballSound.gravity);
   }
 
   void _movingBarrier(_Ball ball, Offset a, Offset b) {
@@ -544,6 +605,7 @@ class PinballGame extends FlameGame {
     if (ball.portalCooldown > 0) return;
     ball.portalCooldown = 0.45;
     _pulse((a + b) / 2, table.secondary, size: 1.4);
+    audio?.play(PinballSound.gate);
     _registerHit(450);
   }
 
@@ -557,6 +619,7 @@ class PinballGame extends FlameGame {
     if (ball.portalCooldown > 0) return;
     ball.portalCooldown = 0.4;
     _pulse(center, table.secondary, size: 1.6);
+    audio?.play(PinballSound.gear);
     _registerHit(400);
   }
 
@@ -566,18 +629,22 @@ class PinballGame extends FlameGame {
     if (_hits == 5) {
       _scoreBoostUntil = _time + 13;
       _announce('2X SCORE • 13 SEC', seconds: 3);
+      audio?.play(PinballSound.boost);
       _pulse(const Offset(200, 375), table.accent, size: 3);
     } else if (_hits == 9) {
       _ballSaverUntil = _time + 17;
       _announce('BALL SAVE ACTIVATED', seconds: 3);
+      audio?.play(PinballSound.award);
       _pulse(const Offset(200, 663), table.secondary, size: 2.8);
     } else if (_hits == 17) {
       _ballsToPlay++;
       _announce('EXTRA BALL AWARDED', seconds: 3);
+      audio?.play(PinballSound.extraBall);
       _pulse(const Offset(200, 385), table.accent, size: 4);
     } else if (_hits == 24) {
       _score += 10000;
       _announce('SUPER JACKPOT +10,000', seconds: 3.5);
+      audio?.play(PinballSound.jackpot);
       _pulse(const Offset(200, 300), table.secondary, size: 5);
       _shake = reducedMotion ? 0 : 0.45;
     }
@@ -586,6 +653,7 @@ class PinballGame extends FlameGame {
       _balls.add(_Ball(const Offset(182, 182), const Offset(-190, 320)));
       _balls.add(_Ball(const Offset(222, 182), const Offset(190, 320)));
       _announce('3-BALL MULTIBALL', seconds: 3);
+      audio?.play(PinballSound.multiball);
       _pulse(const Offset(200, 220), table.accent, size: 4.8);
     }
     _notifyHud();
@@ -605,8 +673,7 @@ class PinballGame extends FlameGame {
   void _collideFlipper(_Ball ball, {required bool left}) {
     final a = left ? _leftPivot : _rightPivot;
     final lift = left ? _leftLift : _rightLift;
-    final radians = left ? -0.19 - lift * 0.67 :
-        math.pi + 0.19 + lift * 0.67;
+    final radians = left ? -0.19 - lift * 0.67 : math.pi + 0.19 + lift * 0.67;
     final b = a + Offset(math.cos(radians) * 78, math.sin(radians) * 78);
     if (!_collideSegment(ball, a, b, 0.78, width: 11)) return;
     final pressed = left ? leftPressed : rightPressed;
@@ -618,32 +685,38 @@ class PinballGame extends FlameGame {
       if (_time - (ball.lastBumperHit[-1] ?? -100) > 0.10) {
         ball.lastBumperHit[-1] = _time;
         _score += 10;
+        audio?.play(PinballSound.flipper);
         _notifyHud();
       }
     }
   }
 
-  bool _collideSegment(_Ball ball, Offset a, Offset b, double bounce,
-      {double width = 0}) {
+  bool _collideSegment(
+    _Ball ball,
+    Offset a,
+    Offset b,
+    double bounce, {
+    double width = 0,
+  }) {
     final v = b - a;
     final sq = _dot(v, v);
-    final projection = sq < 0.001
-        ? 0.0
-        : (_dot(ball.position - a, v) / sq).clamp(0.0, 1.0).toDouble();
+    final projection =
+        sq < 0.001
+            ? 0.0
+            : (_dot(ball.position - a, v) / sq).clamp(0.0, 1.0).toDouble();
     final closest = a + v * projection;
     final delta = ball.position - closest;
     final distance = delta.distance;
     final minDistance = _ballRadius + width;
     if (distance >= minDistance) return false;
-    final normal = distance < 0.0001
-        ? const Offset(0, -1)
-        : delta / distance;
+    final normal = distance < 0.0001 ? const Offset(0, -1) : delta / distance;
     ball.position = closest + normal * minDistance;
     final incoming = _dot(ball.velocity, normal);
     if (incoming < 0) ball.velocity -= normal * ((1 + bounce) * incoming);
     if (incoming < -260 && _time - _lastRailImpact > 0.10) {
       _lastRailImpact = _time;
       _pulse(closest, table.accent, size: 0.75);
+      audio?.play(PinballSound.rail);
     }
     return true;
   }
@@ -659,16 +732,16 @@ class PinballGame extends FlameGame {
     final viewWidth = size.x;
     final viewHeight = size.y;
     if (viewWidth <= 0 || viewHeight <= 0) return;
-    final scale = math.min(viewWidth / _boardWidth,
-        viewHeight / _boardHeight);
+    final scale = math.min(viewWidth / _boardWidth, viewHeight / _boardHeight);
     var zoom = 1.0;
     var focus = const Offset(200, 380);
     // Cinematic plunger close-up -> short ball follow -> full-field reveal.
     // The shot never pauses physics or prevents two-finger flipper input.
     if (_cinematicTime >= 0 && !reducedMotion) {
-      final blend = _cinematicTime < 0.35
-          ? 1.0
-          : (1 - (_cinematicTime - 0.35) / 1.0).clamp(0.0, 1.0).toDouble();
+      final blend =
+          _cinematicTime < 0.35
+              ? 1.0
+              : (1 - (_cinematicTime - 0.35) / 1.0).clamp(0.0, 1.0).toDouble();
       zoom = 1 + 0.34 * blend * blend;
       if (_balls.isNotEmpty) {
         focus = Offset.lerp(focus, _balls.first.position, 0.82 * blend)!;
@@ -680,8 +753,10 @@ class PinballGame extends FlameGame {
     canvas.scale(scale * zoom);
     canvas.translate(-focus.dx, -focus.dy);
     if (_shake > 0 && !reducedMotion) {
-      canvas.translate(math.sin(_time * 63) * _shake * 2.2,
-          math.cos(_time * 71) * _shake * 2.2);
+      canvas.translate(
+        math.sin(_time * 63) * _shake * 2.2,
+        math.cos(_time * 71) * _shake * 2.2,
+      );
     }
     _renderBoard(canvas);
     canvas.restore();
@@ -689,21 +764,81 @@ class PinballGame extends FlameGame {
 
   void _renderBoard(Canvas c) {
     final board = RRect.fromRectAndRadius(
-      const Rect.fromLTWH(12, 12, 376, 736), const Radius.circular(26));
-    c.drawRRect(board, Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: <Color>[table.base, const Color(0xFF04050A), table.base],
-      ).createShader(const Rect.fromLTWH(0, 0, 400, 760)));
-    c.drawRRect(board, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
-      ..color = table.accent.withValues(alpha: 0.5));
-    c.drawRRect(board, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = Colors.white.withValues(alpha: 0.55));
+      const Rect.fromLTWH(12, 12, 376, 736),
+      const Radius.circular(26),
+    );
+    c.drawRRect(
+      board,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[table.base, const Color(0xFF04050A), table.base],
+        ).createShader(const Rect.fromLTWH(0, 0, 400, 760)),
+    );
+    final backplate = _backplateSprite;
+    if (backplate != null) {
+      // Original high-detail 2D scene, deliberately *without* physical parts.
+      // Real colliders and animated targets are rendered above this layer.
+      const dest = Rect.fromLTWH(12, 12, 376, 736);
+      final sourceAspect = backplate.width / backplate.height;
+      final destAspect = dest.width / dest.height;
+      final Rect source;
+      if (sourceAspect > destAspect) {
+        final visibleWidth = backplate.height * destAspect;
+        source = Rect.fromLTWH(
+          (backplate.width - visibleWidth) / 2,
+          0,
+          visibleWidth,
+          backplate.height.toDouble(),
+        );
+      } else {
+        final visibleHeight = backplate.width / destAspect;
+        source = Rect.fromLTWH(
+          0,
+          (backplate.height - visibleHeight) / 2,
+          backplate.width.toDouble(),
+          visibleHeight,
+        );
+      }
+      c.save();
+      c.clipRRect(board);
+      c.drawImageRect(
+        backplate,
+        source,
+        dest,
+        Paint()..filterQuality = FilterQuality.medium,
+      );
+      // Recesses the surface beneath bright collision rails, ball and lamps.
+      c.drawRect(
+        dest,
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[
+              Color(0x7000030A),
+              Color(0x26000108),
+              Color(0x66000209),
+            ],
+          ).createShader(dest),
+      );
+      c.restore();
+    }
+    c.drawRRect(
+      board,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 5
+        ..color = table.accent.withValues(alpha: 0.5),
+    );
+    c.drawRRect(
+      board,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = Colors.white.withValues(alpha: 0.55),
+    );
 
     _drawTableDecor(c);
 
@@ -714,10 +849,8 @@ class PinballGame extends FlameGame {
       final bumper = _bumpers[i];
       final sprite = _bumperSprite;
       if (sprite != null) {
-        _drawCenteredSprite(c, sprite, bumper.center,
-            bumper.radius * 1.35);
-        _drawRing(c, bumper.center, bumper.radius + 3,
-            table.secondary, 1.5);
+        _drawCenteredSprite(c, sprite, bumper.center, bumper.radius * 1.35);
+        _drawRing(c, bumper.center, bumper.radius + 3, table.secondary, 1.5);
       } else {
         _glowCircle(c, bumper.center, bumper.radius, table.secondary);
         _glowCircle(c, bumper.center, bumper.radius * 0.48, table.accent);
@@ -725,8 +858,13 @@ class PinballGame extends FlameGame {
       final sinceHit = _time - (_bumperLastGlow[i] ?? -100);
       if (sinceHit < 0.30) {
         final strength = (1 - sinceHit / 0.30).clamp(0.0, 1.0).toDouble();
-        _drawRing(c, bumper.center, bumper.radius + 7 + sinceHit * 45,
-            table.accent.withValues(alpha: strength * 0.8), 4);
+        _drawRing(
+          c,
+          bumper.center,
+          bumper.radius + 7 + sinceHit * 45,
+          table.accent.withValues(alpha: strength * 0.8),
+          4,
+        );
       }
     }
 
@@ -736,45 +874,90 @@ class PinballGame extends FlameGame {
     _drawFlipper(c, _rightPivot, false, _rightLift);
 
     // Right-side shooter lane and plunger, kept separate from the HUD.
-    _glowLine(c, const Offset(351, 697), const Offset(351, 714),
-        table.secondary, 6);
+    _glowLine(
+      c,
+      const Offset(351, 697),
+      const Offset(351, 714),
+      table.secondary,
+      6,
+    );
 
     for (final ball in _balls) {
       for (var i = 0; i < ball.trail.length; i++) {
         final alpha = (i + 1) / (ball.trail.length + 1) * 0.22;
-        c.drawCircle(ball.trail[i], 3 + alpha * 14,
-            Paint()..color = table.accent.withValues(alpha: alpha));
+        c.drawCircle(
+          ball.trail[i],
+          3 + alpha * 14,
+          Paint()..color = table.accent.withValues(alpha: alpha),
+        );
       }
-      c.drawCircle(ball.position + const Offset(2, 3), _ballRadius + 2,
-          Paint()..color = Colors.black.withValues(alpha: 0.70));
+      c.drawCircle(
+        ball.position + const Offset(2, 3),
+        _ballRadius + 2,
+        Paint()..color = Colors.black.withValues(alpha: 0.70),
+      );
       final sprite = _ballSprite;
       if (sprite != null) {
-        _drawCenteredSprite(c, sprite, ball.position,
-            _ballRadius * 1.35);
+        _drawCenteredSprite(c, sprite, ball.position, _ballRadius * 1.35);
       } else {
-        c.drawCircle(ball.position, _ballRadius,
-            Paint()..shader = const RadialGradient(
+        c.drawCircle(
+          ball.position,
+          _ballRadius,
+          Paint()
+            ..shader = const RadialGradient(
               center: Alignment(-0.5, -0.6),
               colors: <Color>[
-                Colors.white, Color(0xFFA8C8E0), Color(0xFF26344B),
+                Colors.white,
+                Color(0xFFA8C8E0),
+                Color(0xFF26344B),
               ],
-            ).createShader(Rect.fromCircle(center: ball.position,
-                radius: _ballRadius)));
-        c.drawCircle(ball.position + const Offset(-2, -3), 2.2,
-            Paint()..color = Colors.white);
+            ).createShader(
+              Rect.fromCircle(center: ball.position, radius: _ballRadius),
+            ),
+        );
+        c.drawCircle(
+          ball.position + const Offset(-2, -3),
+          2.2,
+          Paint()..color = Colors.white,
+        );
       }
     }
   }
 
-  void _drawCenteredSprite(Canvas canvas, ui.Image image,
-      Offset center, double radius) {
+  void _drawCenteredSprite(
+    Canvas canvas,
+    ui.Image image,
+    Offset center,
+    double radius,
+  ) {
     // Keeps circular bumpers round even when a source canvas is widescreen.
     final side = math.min(image.width, image.height).toDouble();
     final source = Rect.fromLTWH(
-      (image.width - side) / 2, (image.height - side) / 2, side, side);
-    canvas.drawImageRect(image, source,
-        Rect.fromCircle(center: center, radius: radius),
-        Paint()..filterQuality = FilterQuality.high);
+      (image.width - side) / 2,
+      (image.height - side) / 2,
+      side,
+      side,
+    );
+    canvas.drawImageRect(
+      image,
+      source,
+      Rect.fromCircle(center: center, radius: radius),
+      Paint()..filterQuality = FilterQuality.high,
+    );
+  }
+
+  void _drawRotatingSprite(
+    Canvas canvas,
+    ui.Image image,
+    Offset center,
+    double radius,
+    double angle,
+  ) {
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(angle);
+    _drawCenteredSprite(canvas, image, Offset.zero, radius);
+    canvas.restore();
   }
 
   void _drawImpacts(Canvas c) {
@@ -782,25 +965,37 @@ class PinballGame extends FlameGame {
       final progress = impact.age / impact.duration;
       final fading = (1 - progress).clamp(0.0, 1.0).toDouble();
       final radius = (7 + 30 * progress) * impact.size;
-      c.drawCircle(impact.center, radius, Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5 * fading
-        ..color = impact.color.withValues(alpha: 0.58 * fading));
+      c.drawCircle(
+        impact.center,
+        radius,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5 * fading
+          ..color = impact.color.withValues(alpha: 0.58 * fading),
+      );
       // Sparse radial spark lines: readable even during multiball.
       for (var i = 0; i < 7; i++) {
         final angle = i * (math.pi * 2 / 7);
-        final inner = impact.center + Offset(
-          math.cos(angle) * radius * 0.52,
-          math.sin(angle) * radius * 0.52,
+        final inner =
+            impact.center +
+            Offset(
+              math.cos(angle) * radius * 0.52,
+              math.sin(angle) * radius * 0.52,
+            );
+        final outer =
+            impact.center +
+            Offset(
+              math.cos(angle) * radius * 0.82,
+              math.sin(angle) * radius * 0.82,
+            );
+        c.drawLine(
+          inner,
+          outer,
+          Paint()
+            ..strokeWidth = fading * 2
+            ..strokeCap = StrokeCap.round
+            ..color = impact.color.withValues(alpha: fading * 0.72),
         );
-        final outer = impact.center + Offset(
-          math.cos(angle) * radius * 0.82,
-          math.sin(angle) * radius * 0.82,
-        );
-        c.drawLine(inner, outer, Paint()
-          ..strokeWidth = fading * 2
-          ..strokeCap = StrokeCap.round
-          ..color = impact.color.withValues(alpha: fading * 0.72));
       }
     }
   }
@@ -811,52 +1006,105 @@ class PinballGame extends FlameGame {
         for (var i = 0; i < 24; i++) {
           final x = 43.0 + (i * 79 % 310);
           final y = 72.0 + (i * 137 % 555);
-          c.drawCircle(Offset(x, y), 1.2,
-              Paint()..color = Colors.white.withValues(alpha: 0.6));
+          c.drawCircle(
+            Offset(x, y),
+            1.2,
+            Paint()..color = Colors.white.withValues(alpha: 0.6),
+          );
         }
         _drawRing(c, const Offset(200, 163), 49, table.accent, 1.4);
         _drawRing(c, const Offset(200, 163), 38, table.secondary, 2);
-        _drawRing(c, const Offset(110, 405), 22, table.secondary, 3);
         _drawRing(c, const Offset(200, 531), 52, table.accent, 1);
         for (var i = 0; i < 8; i++) {
           final angle = i * math.pi / 4 + _time * 0.17;
-          final a = const Offset(200, 163) +
+          final a =
+              const Offset(200, 163) +
               Offset(math.cos(angle) * 32, math.sin(angle) * 32);
-          final b = const Offset(200, 163) +
+          final b =
+              const Offset(200, 163) +
               Offset(math.cos(angle) * 48, math.sin(angle) * 48);
           _glowLine(c, a, b, table.secondary, 1.2);
         }
-        if (table.variant == 1) {
+        if (table.variant == 0) {
+          final sprite = _hazardSprite;
+          if (sprite != null) {
+            _drawRotatingSprite(
+              c,
+              sprite,
+              const Offset(111, 404),
+              28,
+              _time * 0.32,
+            );
+            _drawRotatingSprite(
+              c,
+              sprite,
+              const Offset(289, 156),
+              28,
+              -_time * 0.28,
+            );
+          } else {
+            _drawRing(c, const Offset(111, 404), 22, table.secondary, 3);
+            _drawRing(c, const Offset(289, 156), 22, table.accent, 3);
+          }
+        } else if (table.variant == 1) {
           _drawRing(c, const Offset(114, 359), 72, table.secondary, 1.5);
           _drawRing(c, const Offset(285, 187), 41, table.accent, 2);
         } else if (table.variant == 2) {
           final x = 200.0 + 52 * math.sin(_time * 1.6);
-          _glowLine(c, Offset(x - 34, 438), Offset(x + 34, 438),
-              table.secondary, 7);
+          _glowLine(
+            c,
+            Offset(x - 34, 438),
+            Offset(x + 34, 438),
+            table.secondary,
+            7,
+          );
         }
       case PinballUniverseId.neon:
         for (var i = 0; i < 14; i++) {
           final y = 99.0 + i * 39;
-          _glowLine(c, Offset(53, y), Offset(324, y),
-              table.accent.withValues(alpha: 0.16), 0.6);
+          _glowLine(
+            c,
+            Offset(53, y),
+            Offset(324, y),
+            table.accent.withValues(alpha: 0.16),
+            0.6,
+          );
         }
         for (var i = 0; i < 7; i++) {
           final x = 63.0 + i * 42;
-          _glowLine(c, Offset(x, 84), Offset(x, 621),
-              table.secondary.withValues(alpha: 0.13), 0.6);
+          _glowLine(
+            c,
+            Offset(x, 84),
+            Offset(x, 621),
+            table.secondary.withValues(alpha: 0.13),
+            0.6,
+          );
         }
         _drawRing(c, const Offset(200, 391), 46, table.secondary, 3);
         _drawRing(c, const Offset(200, 391), 28, table.accent, 2);
-        _glowLine(c, const Offset(144, 390), const Offset(256, 390),
-            table.secondary, 5);
+        _glowLine(
+          c,
+          const Offset(144, 390),
+          const Offset(256, 390),
+          table.secondary,
+          5,
+        );
         if (table.variant == 1) {
           _drawRing(c, const Offset(100, 392), 24, table.secondary, 3);
           _drawRing(c, const Offset(280, 147), 24, table.accent, 3);
         } else if (table.variant == 2) {
+          if (_hazardSprite case final reactor?) {
+            _drawCenteredSprite(c, reactor, const Offset(200, 297), 47);
+          }
           _drawRing(c, const Offset(200, 297), 74, table.accent, 2);
           final x = 200.0 + 46 * math.sin(_time * 1.9);
-          _glowLine(c, Offset(x - 22, 474), Offset(x + 22, 474),
-              table.secondary, 6);
+          _glowLine(
+            c,
+            Offset(x - 22, 474),
+            Offset(x + 22, 474),
+            table.secondary,
+            6,
+          );
         }
       case PinballUniverseId.clockwork:
         for (final center in <Offset>[
@@ -869,76 +1117,139 @@ class PinballGame extends FlameGame {
           _drawRing(c, center, radius - 13, table.secondary, 1.2);
           for (var i = 0; i < 12; i++) {
             final angle = i * math.pi / 6 + _time * 0.14;
-            _glowLine(c,
-                center + Offset(math.cos(angle) * (radius - 3),
-                    math.sin(angle) * (radius - 3)),
-                center + Offset(math.cos(angle) * (radius + 6),
-                    math.sin(angle) * (radius + 6)),
-                table.accent, 3);
+            _glowLine(
+              c,
+              center +
+                  Offset(
+                    math.cos(angle) * (radius - 3),
+                    math.sin(angle) * (radius - 3),
+                  ),
+              center +
+                  Offset(
+                    math.cos(angle) * (radius + 6),
+                    math.sin(angle) * (radius + 6),
+                  ),
+              table.accent,
+              3,
+            );
           }
         }
-        _drawRing(c, Offset(200 + 36 * math.sin(_time * 1.5), 433),
-            21, table.secondary, 6);
-        if (table.variant == 1) {
+        if (table.variant == 0) {
+          final center = Offset(200 + 36 * math.sin(_time * 1.5), 433);
+          if (_hazardSprite case final gear?) {
+            _drawRotatingSprite(c, gear, center, 23, _time * 1.9);
+          } else {
+            _drawRing(c, center, 21, table.secondary, 6);
+          }
+        } else if (table.variant == 1) {
           if (_time % 4.8 < 2.8) {
-            _glowLine(c, const Offset(127, 457), const Offset(273, 457),
-                table.accent, 7);
+            _glowLine(
+              c,
+              const Offset(127, 457),
+              const Offset(273, 457),
+              table.accent,
+              7,
+            );
           }
         } else if (table.variant == 2) {
           final shift = 38 * math.sin(_time * 1.22);
-          _glowLine(c, Offset(86 + shift, 375),
-              Offset(170 + shift, 375), table.secondary, 7);
-          _drawRing(c, Offset(255 - shift * 0.6, 471),
-              21, table.accent, 3);
+          _glowLine(
+            c,
+            Offset(86 + shift, 375),
+            Offset(170 + shift, 375),
+            table.secondary,
+            7,
+          );
+          final center = Offset(255 - shift * 0.6, 471);
+          if (_hazardSprite case final gear?) {
+            _drawRotatingSprite(c, gear, center, 23, -_time * 1.4);
+          } else {
+            _drawRing(c, center, 21, table.accent, 3);
+          }
         }
     }
   }
 
-  void _drawRing(Canvas c, Offset center, double radius, Color color,
-      double width) {
-    c.drawCircle(center, radius, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = width * 3
-      ..color = color.withValues(alpha: 0.08));
-    c.drawCircle(center, radius, Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = width
-      ..color = color.withValues(alpha: 0.77));
+  void _drawRing(
+    Canvas c,
+    Offset center,
+    double radius,
+    Color color,
+    double width,
+  ) {
+    c.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width * 3
+        ..color = color.withValues(alpha: 0.08),
+    );
+    c.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width
+        ..color = color.withValues(alpha: 0.77),
+    );
   }
 
   void _glowCircle(Canvas c, Offset center, double radius, Color color) {
-    c.drawCircle(center, radius + 9, Paint()
-      ..shader = RadialGradient(
-        colors: <Color>[color.withValues(alpha: 0.45), Colors.transparent],
-      ).createShader(Rect.fromCircle(center: center, radius: radius + 11)));
-    c.drawCircle(center, radius, Paint()
-      ..color = color.withValues(alpha: 0.8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4);
-    c.drawCircle(center, radius - 5, Paint()
-      ..color = Colors.white.withValues(alpha: 0.22));
+    c.drawCircle(
+      center,
+      radius + 9,
+      Paint()
+        ..shader = RadialGradient(
+          colors: <Color>[color.withValues(alpha: 0.45), Colors.transparent],
+        ).createShader(Rect.fromCircle(center: center, radius: radius + 11)),
+    );
+    c.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4,
+    );
+    c.drawCircle(
+      center,
+      radius - 5,
+      Paint()..color = Colors.white.withValues(alpha: 0.22),
+    );
   }
 
   void _glowLine(Canvas c, Offset a, Offset b, Color color, double width) {
-    c.drawLine(a, b, Paint()
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = width * 4
-      ..color = color.withValues(alpha: 0.10));
-    c.drawLine(a, b, Paint()
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = width
-      ..color = color.withValues(alpha: 0.88));
+    c.drawLine(
+      a,
+      b,
+      Paint()
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = width * 4
+        ..color = color.withValues(alpha: 0.10),
+    );
+    c.drawLine(
+      a,
+      b,
+      Paint()
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = width
+        ..color = color.withValues(alpha: 0.88),
+    );
   }
 
   void _drawFlipper(Canvas c, Offset pivot, bool left, double lift) {
-    final angle = left ? -0.19 - lift * 0.67 :
-        math.pi + 0.19 + lift * 0.67;
+    final angle = left ? -0.19 - lift * 0.67 : math.pi + 0.19 + lift * 0.67;
     final tip = pivot + Offset(math.cos(angle) * 78, math.sin(angle) * 78);
     _glowLine(c, pivot, tip, table.secondary, 18);
-    c.drawLine(pivot, tip, Paint()
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 10
-      ..color = const Color(0xFFF7F3E8));
+    c.drawLine(
+      pivot,
+      tip,
+      Paint()
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 10
+        ..color = const Color(0xFFF7F3E8),
+    );
     _glowCircle(c, pivot, 7, table.accent);
   }
 }

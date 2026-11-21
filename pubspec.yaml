@@ -1,0 +1,27 @@
+name: premium_pinball
+description: Original premium pinball universes - three worlds, nine playable tables.
+publish_to: none
+version: 0.4.0+1
+
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.30.1
+  shared_preferences: ^2.5.3
+  audioplayers: ^6.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/universe_covers/
+    - assets/backplates/
+    - assets/gameplay/
+    - assets/audio/
