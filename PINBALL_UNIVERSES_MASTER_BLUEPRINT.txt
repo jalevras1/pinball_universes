@@ -1,0 +1,143 @@
+PINBALL UNIVERSES — MASTER CREATIVE AND PRODUCTION BLUEPRINT
+Edition: 2026-11-21 / Run 02
+Status: Working creative direction; nine distinct playable prototype boards planned
+
+VISION
+An original premium 2D portrait mobile pinball collection, organized as
+entire universes rather than a single machine. Players select a universe,
+choose one of its genuinely distinct playable tables, then launch the game.
+Each universe is a coherent fantasy/technology setting that can expand with
+new boards, characters, obstacles, missions, events, and special ball sets.
+
+MAIN GAME STRUCTURE
+MAIN MENU -> UNIVERSE GALLERY -> BOARD GALLERY -> LAUNCH -> FULL TABLE ->
+RESULTS -> RETRY / CHOOSE ANOTHER BOARD. The universe and board picker can
+live on one smooth scrollable screen with universe tabs.
+
+UNIVERSE 1: CELESTIAL REALMS
+Look: night-blue lacquer, cosmic astronomy, gold detail, lavender and ice-blue
+magic. Lore: an ancient observatory network awakens constellation machinery.
+Board A / THE ASTRAL ORRERY: classic orbit loops, arcane portal to upper lane,
+three luminous crystal pop bumpers and star-alignment missions.
+Board B / MOONFALL SANCTUARY: differently positioned ramps, twin lunar gravity
+wells affecting ball flight, crescent lanes and lunar time trials.
+Board C / NEBULA TEMPEST: storm gates, moving electrical barrier, four reactive
+bumpers, atmospheric hazard changes and a Nebula Nova finale.
+
+UNIVERSE 2: NEON METROPOLIS
+Look: sleek obsidian chrome, cyan/magenta emissive circuits, fast geometry.
+Lore: an electric city where each machine controls a power district.
+Board A / CIRCUIT VELOCITY: five-bumper arcade arrangement, central speed
+accelerator, repeated loop shots and Overdrive multiball.
+Board B / QUANTUM GRID: asymmetric target cluster, electronic transfer portal,
+relay-combo paths, phase-change objectives.
+Board C / REACTOR RUSH: dominant central core, reactor magnet field, moving
+energy barrier, overload modes and core-stability scoring.
+
+UNIVERSE 3: CLOCKWORK EMPIRE
+Look: intricate burnished brass, dark burgundy lacquer, miniature machine
+chambers, warm amber, believable springs, hinges and moving cogs.
+Lore: a kingdom of self-regulating mechanical cities and lost time chambers.
+Board A / THE GRAND MECHANISM: clockwork bumper triangle, oscillating gear,
+mechanical locks and synchronizing gear missions.
+Board B / CHRONO CITADEL: symmetric upper mechanisms, timed gate that changes
+access to shots, countdown missions and clock precision.
+Board C / BRASS LABYRINTH: maze-style rails, shifting brass wall, moving gear,
+alternate shots and chamber unlocks.
+
+PREMIUM INTERACTIVE FEEL
+- Steel ball has obvious weight, specular highlight and soft contact shadow.
+- Responsive left/right flippers independently operable with two thumbs.
+- Pop bumpers: emissive rim pulse, inward spark burst, localized contact sound,
+  short tactile feedback, unique universe color and score increment.
+- Slingshots: sharp angled light emission, quick rebound, small spark fan.
+- Ramps: mild strip lighting follows the ball; no opaque blinding trail.
+- Drop targets: hit flash, mechanical depression and return animation.
+- Gates/portals: animated open/close or phase transition, collision feedback.
+- Combo streaks: clear small score ribbons with meaningful audio escalation.
+- Ball lock/multiball: distinctive fanfare, synchronized lamps, 3-ball release,
+  jackpot progress display, high-value climax and brief camera emphasis.
+- Power-up awards: 2x score, ball save, extra ball, jackpot and multiball.
+  These are readable pinball MODE/REWARD awards, not indistinguishable icons.
+- Effects are layered BEHIND critical ball/flipper silhouettes, capped and
+  adjusted for mobile performance. No giant UI blocking the playfield.
+
+CINEMATIC CAMERA PLAN
+1. Table intro (future): small elegant pan over the distinctive mechanism.
+2. Ball ready: full table shown with subtle plunger light.
+3. Launch input: quick close-up of shooter ball/plunger (about 1.34x zoom).
+4. Ball fires: follow upward along the shooter lane for a fraction of a second.
+5. Hand control back: smoothly zoom out to full playfield within about 1.35 s.
+6. Gameplay: stable full table for precision; any impact shake is minimal.
+7. Multiball/jackpot: short border light pulses, NOT extended camera occlusion.
+8. Reduced-motion switch disables follow zoom and shake entirely.
+Target cinematic controls are fluid and skippable; never disable flippers.
+
+FUTURE SPECIAL-BALL COLLECTION — NOT IN RUN 01, NO COMMERCE YET
+The user requested earnable OR optional purchasable special balls that have
+unique abilities. Keep this as a later phase, with a ball collection/loadout
+selector and a single ball identity carried into a table session.
+Proposed design candidates (working names):
+- MOONSTONE: a brief charged lunar pull/magnet assist, limited uses.
+- STORM ORB: chain-lightning bumper bonus on a timed cooldown.
+- EMBER CORE: short high-scoring heat streak after precision hits.
+- CHRONOSPHERE: slows moving table obstacles briefly, NOT the player's ball.
+- QUANTUM SPHERE: one additional safe portal or relay charge per ball.
+- TITAN STEEL: altered mass/ricochet feel, subject to physics balance tests.
+- AURORA PEARL: cosmetic shimmer and trail, normal collision performance.
+Future store architecture should distinguish earned unlocks, optional purchases,
+cosmetic-only effects and gameplay-changing perks; never auto-charge players.
+Balance paid abilities carefully; separate competitive scores if needed and
+provide reasonable earnable alternatives. Purchases, accounts, payment SDKs,
+pricing and platform policy work all require separate approval and research.
+
+SHARED TECHNICAL SYSTEMS
+One Flutter app shell, Flame game loop, common table camera, per-board rule
+package, collision map, controls, pause, settings, achievements and scores.
+Run 01 uses a prototype physics solver; replace with Forge2D's true rigid-body
+ball/CCD and motor-driven joint flippers as soon as Flutter build/test access
+in the existing Codespace is available. Do not confuse the prototype with a
+finished simulation.
+
+GAME DATA / EXTENSIBILITY CONTRACT
+Universe: id, palette, cover art, lore, board list, world achievements.
+Board: id, universe id, art variants, collider layout, dynamic obstacle types,
+mission goals, score rules, sound palette, camera event presets, high score.
+Ball (later): id, unlock source, cosmetic skins, ability data, cooldown/charges,
+accessibility-safe VFX, scoring classification.
+Shared engine must be able to add universes/boards without rewriting screens.
+
+VISUAL / ASSET CONTRACT
+Strictly original 2D. NO 3D models or 3D-rendered assets.
+Use original gallery-cover illustrations per universe, plus distinct isolated
+2D playfield art and transparent sprite layers per board. Gallery art is a
+visual reference; it is NOT accurate collision geometry and must not be baked
+into the interactive playfield without separating physical parts.
+Prioritize native resolution, consistent alignment, alpha quality, readable
+ball contrast, fast decoding, texture-atlas packaging, safe memory budgets.
+
+QUALITY GATES BEFORE CLAIMING PRODUCTION READY
+1. Codespace Flutter analyze/test/web build pass.
+2. All nine board selections resolve to the correct geometry and hazards.
+3. Full portrait Android touch test, including both flippers simultaneously.
+4. No stuck balls, broken flipper states, lost controls during camera motion.
+5. Camera re-centers before fast critical flipper interaction.
+6. Clean 2D sprite alignment and no visual stutter at table transitions.
+7. Frame rate, thermal/battery costs and loading time measured on phone.
+8. Sound and haptics tuned; effects never obscure ball or obscure UI.
+9. Original branding/name approved before public release or app-icon build.
+
+WORKFLOW / SAFETY
+Reuse existing `cuddly space chainsaw` GitHub Codespace; do not create a new
+Codespace. Work in separate sibling `/workspaces/premium_pinball`, never mutate
+`/workspaces/dragon_arcade` source, branch, or build. Port 8766 is pinball;
+dragon currently uses 8765. Package source and art separately for persistence.
+One short user copy/paste block is preferable for each phone-only action.
+
+CURRENT DELIVERY SCOPE
+Run 02: source-level proof-of-concept of universe chooser, nine distinct
+configurations, cinematic launch camera, touch flippers, score/awards,
+three original universe cover images, one transparent steel-ball sprite,
+three themed transparent bumper sprites, image-fallback rendering, tests and
+Codespace installer.
+Not yet compiled in a Flutter SDK, not yet uploaded into the user's Codespace.

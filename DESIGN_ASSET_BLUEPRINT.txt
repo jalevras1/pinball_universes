@@ -1,0 +1,63 @@
+PINBALL COLLECTION — ORIGINAL 3-TABLE TECHNICAL SKETCH (ARCHIVED)
+Run 01 (2026-11-20)
+SUPERSEDED: The authoritative plan is PINBALL_UNIVERSES_MASTER_BLUEPRINT.txt.
+The earlier three-table plan evolved to three universes with NINE boards.
+The geometry below describes only the three original boards and is retained
+solely as history, not as the current nine-board spec.
+
+CORE SCREEN / COLLISION DESIGN
+Portrait logical playfield 400 by 760 units, scaled uniformly to device.
+Top score bar occupies the device safe area rather than painting over shots.
+Ball radius 7.5 world units. Flippers pivot at (127,664) and (273,664).
+Right plunger lane x=336..369, center x=352, launch at y=653.
+Left/right wall x=31/369. Initial lower drain below y=745.
+Art concepts are NOT authoritative collision geometry; only code geometry is.
+
+TABLE 01 — CELESTIAL FANTASY
+Look: deep midnight blue, gold machine filigree, icy-blue light, amethyst.
+Unique mechanic: arcane portal at (111,404) transports to (289,156).
+Bumper set: (112,287), (211,250), (289,319).
+Need: layered starfield base, two independent animated portal discs,
+crystal bumpers with transparent halos, astronomical orrery arms, ornate ramp
+skins, inset glow runes and score/multiball effects.
+Stages: Ignition → Star Alignment → Eclipse → Astral Ascension.
+
+TABLE 02 — NEON OVERDRIVE
+Look: sleek obsidian chrome, cyan/magenta neon, clean machined geometry.
+Unique mechanic: accelerator band across x=150..250 near y=390.
+Bumper set: (112,218), (285,219), (199,339), (106,433), (293,433).
+Need: dark technology backplate, emissive lane rails, neon bumper designs,
+animated scanner lines, electrostatic boost strips, circuit target sheets,
+charged flipper accents, energetic multiball streaks.
+Stages: Charge → Circuit Break → Turbo Loop → Overdrive.
+
+TABLE 03 — CLOCKWORK LEGENDS
+Look: intricate aged brass, warm amber, garnet leather, rotary gear cutouts.
+Unique mechanic: oscillating gear around (200,433), horizontal range ±36.
+Bumper set: (197,216), (105,332), (293,332).
+Need: aged-brass/base engravings, isolated gear gears with frame sequence,
+gate hinge/pivot sprites, lever targets, brass lane tubes, amber bumper lamps,
+spring-driven ball lock, clockwork multiball event.
+Stages: Wind Up → Gear Alignment → Chrono Lock → Grand Mechanism.
+
+ASSET CONTRACT FOR ALL THREE TABLES
+1. Painted 2D backplate with no ball, flippers, rails or attached moving parts.
+2. Decorative foreground layers with transparent alpha; isolated movable
+   objects separately, centered consistently across animation frames.
+3. Geometry documented per piece as polygons/segments/circles in world units;
+   artwork never silently replaces physics.
+4. Consistent light direction, palette and native scale per table.
+5. Screen readability passes: metallic steel ball always high-contrast;
+   no effects obscuring the flippers or drain.
+6. Preload common ball/flipper assets, lazy-load table-specific art when chosen.
+7. Only original 2D illustrations; no 3D models, no 3D renders.
+8. Additional premium assets are produced in controlled batches, then each
+   batch is checked for transparency, frame dimensions and positioning.
+
+NEXT TECHNICAL MILESTONES
+A. Compile/run Run 01 in existing Codespace; repair anything found.
+B. Replace prototype collision response with flame_forge2d rigid bodies,
+   motor-jointed flippers, contact/sensor callbacks and CCD for fast balls.
+C. Integrate aligned production PNG art and particle sequences.
+D. Build one fully tuned premium vertical slice, then tune the other two.
+E. Add high score/achievement system, sound/haptics, missions and QA.

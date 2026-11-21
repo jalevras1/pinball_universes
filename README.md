@@ -1,2 +1,100 @@
-# pinball_universes
-Premium cinematic pinball universe built with Flutter and Flame
+# Pinball Universes — Run 03 (fresh Codespace edition)
+
+Original **portrait 2D Flutter + Flame** pinball universes prototype.
+
+There are three visual universes and nine distinct prototype boards:
+
+1. **Celestial Realms:** The Astral Orrery (portals); Moonfall Sanctuary
+   (gravity wells); Nebula Tempest (moving storm barrier).
+2. **Neon Metropolis:** Circuit Velocity (accelerator); Quantum Grid
+   (phase transfer); Reactor Rush (reactor magnet and energy barrier).
+3. **Clockwork Empire:** The Grand Mechanism (moving gear); Chrono Citadel
+   (timed gate); Brass Labyrinth (moving maze barrier and gear).
+
+The universe/board gallery, flipper controls, ball launches, scoring,
+board-specific geometry, mission labels, multiball event, ball counts, pause,
+replay, cinematic launch camera, hit effects, bonus awards, and locally
+stored personal bests are implemented as a first interactive milestone.
+Three original high-detail universe-cover images are included for the gallery,
+plus transparent steel-ball and themed bumper sprites in `assets/gameplay/`.
+The game decodes smaller working copies and draws them over independently
+defined physics shapes, falling back to vector circles if an image fails.
+
+## Important scope and limitations
+
+- The ball solver is a **prototype**, not yet the final Forge2D simulation.
+  Forge2D rigid bodies/joints and careful physics tuning come after the first
+  successful build in the independent pinball Codespace.
+- Most gameplay drawing is code-generated 2D and therefore a prototype. The three
+  universe covers are detailed original 2D illustrations for the selection
+  cards, **not** accurately collidable gameplay textures. Nine distinct
+  finished table-art sets and transparent animated objects are still required.
+- Sound, haptic feedback, final animated sprite effects, ball lock persistence,
+  full campaigns, and polished menus are future production milestones.
+- This package has **not been compiled with Flutter here** because that SDK
+  is not available in the asset-production environment. Run the checks below
+  in the new pinball Codespace before calling it a verified build.
+- This project must stay separate from `dragon_arcade`.
+
+## Install inside a brand-new pinball Codespace
+
+Create a new GitHub repository named **`pinball_universes`**, with an initial
+README and its own Codespace. This is not the Dragon repo or Codespace.
+
+1. Upload `PREMIUM_PINBALL_UNIVERSES_RUN03.zip` into the **root** of the
+   `pinball_universes` repository using GitHub's Add file > Upload files UI,
+   and commit that upload. It is under GitHub's usual 25 MB web-upload limit.
+2. Create or reopen the Codespace connected to `pinball_universes` on `main`.
+3. In that Codespace's single terminal, run:
+
+   ```bash
+   cd /workspaces/pinball_universes && unzip -oq PREMIUM_PINBALL_UNIVERSES_RUN03.zip && bash premium_pinball_src/INSTALL_NEW_CODESPACE.sh
+   ```
+
+The new installer checks the repository identity, installs Flutter stable if
+not already installed, initializes the Flutter project in the *pinball repo*
+using Dart package name `premium_pinball`, adds dependencies, installs the code
+and artwork, formats and checks the code, runs tests, builds web, saves a Git
+commit and attempts a push. If everything passes, it automatically starts the
+preview web server on port **8766**. In the Codespaces Ports panel, open port
+8766 in your phone browser. Initial SDK installation may take several minutes.
+
+**Note:** The older `INSTALL_IN_CODESPACE.sh` is only for the *previous plan*
+where Pinball was a sibling folder inside Dragon's Codespace. **Do not run that
+older installer** in the new separate repository. Use
+`INSTALL_NEW_CODESPACE.sh` here.
+
+The Dragon game remains in its existing independent repo and Codespace, using
+its own port **8765**. Nothing in this installer changes it.
+
+## Touch controls
+
+- Select a universe, tap one of its three boards, then **LAUNCH SELECTED TABLE**.
+- Tap **LAUNCH BALL** to fire the shooter-lane ball.
+- Touch/hold the lower left and lower right portions of the screen for flippers.
+  Two fingers can control both flippers simultaneously.
+- Use the top pause icon, top back arrow, or game-over options.
+- A short ball-follow launch zoom returns to the full playfield automatically;
+  use the motion icon in the gallery to disable zoom/shake if preferred.
+
+## Internal structure
+
+- `lib/main.dart` — Flutter gallery, best scores, routes, touch input, HUD.
+- `lib/game/table_data.dart` — three universes, nine independent board IDs.
+- `lib/game/pinball_game.dart` — initial Flame loop, collision prototype,
+  table physics and 2D renderer.
+- `test/table_catalog_test.dart` — catalog invariants.
+
+## Production acceptance gates
+
+- Three universes present, with three different boards within each.
+- Both flippers react independently to multitouch.
+- The launch lane fires a ball; it can strike bumpers and drain normally.
+- Each board's unique mechanism visibly works and increments score.
+- Three-ball and replay loop completes without a stuck ball.
+- Local best score survives a browser refresh.
+- No gameplay blockers from top HUD or visual effects.
+- Cinematic ball launch zoom exits promptly; both flippers remain operable.
+- 2x score, ball save, extra ball and jackpot bonus indicators are readable.
+- Web compilation, Android phone preview and performance are verified in the
+  Codespace before any statement of production readiness.
