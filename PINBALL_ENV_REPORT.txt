@@ -1,0 +1,56 @@
+FLUTTER FAILURE REPORT
+original_create.exit=0
+original_flutter_version.exit=0
+original_pub_get.exit=0
+original_web_build.exit=1
+           <asynchronous suspension>
+           #13     main (package:flutter_tools/executable.dart:115:3)
+           <asynchronous suspension>
+
+
+[        ] Running 2 shutdown hooks
+[   +1 ms] Shutdown hooks complete
+[        ] exiting with code 1
+original_web_precache.exit=0
+recovery_create.exit=143
+  unified_analytics 8.0.18 (8.4.0 available)
+  vm_service 15.3.0 (15.4.0 available)
+  web 1.1.1 (1.1.2 available)
+  xml 6.6.1 (7.1.0 available)
+No dependencies changed.
+27 packages have newer versions incompatible with dependency constraints.
+Try `dart pub outdated` for more information.
+Terminated
+recovery_sdk_clone.exit=0
+recovery_web_precache.exit=143
++ webkit_inspection_protocol 1.2.1
++ xml 6.6.1 (7.1.0 available)
++ yaml 3.1.4
++ yaml_edit 2.2.4
+Changed 101 dependencies!
+27 packages have newer versions incompatible with dependency constraints.
+Try `dart pub outdated` for more information.
+Terminated
+refreshed_create.exit=143
+  unified_analytics 8.0.18 (8.4.0 available)
+  vm_service 15.3.0 (15.4.0 available)
+  web 1.1.1 (1.1.2 available)
+  xml 6.6.1 (7.1.0 available)
+No dependencies changed.
+27 packages have newer versions incompatible with dependency constraints.
+Try `dart pub outdated` for more information.
+Terminated
+MEMORY EVENTS
+low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+oom_group_kill 0
+MEMORY LIMIT
+max
+PROCESS EVENTS
+max 0
+DISK SPACE
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/loop4       32G   14G   16G  47% /workspaces
