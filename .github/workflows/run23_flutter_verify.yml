@@ -1,0 +1,58 @@
+name: Run23 isolated Flutter verification
+
+on:
+  push:
+    branches:
+      - 'feature/pinball-run23-physics-event-telemetry-20261123'
+    paths:
+      - '.github/workflows/run23_flutter_verify.yml'
+      - 'PINBALL_RUN23_PHYSICS_TELEMETRY_CANDIDATE_20261123.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mechanics:
+    name: Analyze, test, build Run23 overlay
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify candidate archive and overlay isolated source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'feature/pinball-run23-physics-event-telemetry-20261123'
+          printf '%s  %s\n' 'c360bb04ac72bd71289f2f33ec897bc4d660343ed47a8225db559cb592fbfa5e' 'PINBALL_RUN23_PHYSICS_TELEMETRY_CANDIDATE_20261123.zip' | sha256sum -c -
+          unzip -oq PINBALL_RUN23_PHYSICS_TELEMETRY_CANDIDATE_20261123.zip -d "$RUNNER_TEMP"
+          for path in \
+            lib/main.dart lib/developer_console.dart \
+            lib/game/developer_scenarios.dart lib/game/pinball_game.dart \
+            lib/game/shooter_lane.dart \
+            test/gameplay_mechanics_test.dart test/shooter_lane_test.dart \
+            test/shooter_exit_handoff_test.dart test/trajectory_invariants_test.dart \
+            test/developer_console_test.dart test/run23_ball_path_and_contact_test.dart; do
+            install -Dm644 "$RUNNER_TEMP/pinball_run23_candidate/$path" "$path"
+          done
+      - name: Set up Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Verify Dart and Flutter versions
+        run: |
+          dart --version
+          flutter --version
+      - name: Format candidate source
+        run: dart format lib/main.dart lib/developer_console.dart lib/game/developer_scenarios.dart lib/game/pinball_game.dart lib/game/shooter_lane.dart test/gameplay_mechanics_test.dart test/shooter_lane_test.dart test/shooter_exit_handoff_test.dart test/trajectory_invariants_test.dart test/developer_console_test.dart test/run23_ball_path_and_contact_test.dart
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Static analysis
+        run: flutter analyze
+      - name: Unit and widget tests
+        run: flutter test
+      - name: Production web build
+        run: flutter build web --release
+      - name: Source whitespace integrity
+        run: git diff --check
