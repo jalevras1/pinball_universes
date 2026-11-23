@@ -75,12 +75,11 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
     final table = tableById(_selected);
     final result = await Navigator.of(context).push<int>(
       MaterialPageRoute<int>(
-        builder:
-            (_) => PinballPlayScreen(
-              table: table,
-              reducedMotion: _reducedMotion,
-              soundEnabled: _soundEnabled,
-            ),
+        builder: (_) => PinballPlayScreen(
+          table: table,
+          reducedMotion: _reducedMotion,
+          soundEnabled: _soundEnabled,
+        ),
       ),
     );
     if (!mounted) return;
@@ -162,10 +161,9 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                                 ? Icons.volume_up_rounded
                                 : Icons.volume_off_rounded,
                           ),
-                          tooltip:
-                              _soundEnabled
-                                  ? 'Mute sound effects'
-                                  : 'Enable sound effects',
+                          tooltip: _soundEnabled
+                              ? 'Mute sound effects'
+                              : 'Enable sound effects',
                         ),
                         IconButton(
                           onPressed: () async {
@@ -181,10 +179,9 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                                 ? Icons.motion_photos_off
                                 : Icons.motion_photos_on,
                           ),
-                          tooltip:
-                              _reducedMotion
-                                  ? 'Enable cinematic camera'
-                                  : 'Reduce camera motion',
+                          tooltip: _reducedMotion
+                              ? 'Enable cinematic camera'
+                              : 'Reduce camera motion',
                         ),
                       ],
                     ),
@@ -222,12 +219,12 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                             selectedColor: universe.accent.withValues(
                               alpha: 0.35,
                             ),
-                            onSelected:
-                                (_) => setState(() {
-                                  _universe = universe.id;
-                                  _selected =
-                                      tablesInUniverse(universe.id).first.id;
-                                }),
+                            onSelected: (_) => setState(() {
+                              _universe = universe.id;
+                              _selected = tablesInUniverse(universe.id)
+                                  .first
+                                  .id;
+                            }),
                           ),
                         );
                       })
@@ -357,10 +354,9 @@ class _TableCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color:
-              selected
-                  ? table.accent.withValues(alpha: 0.92)
-                  : Colors.white.withValues(alpha: 0.16),
+          color: selected
+              ? table.accent.withValues(alpha: 0.92)
+              : Colors.white.withValues(alpha: 0.16),
           width: selected ? 2 : 1,
         ),
         gradient: LinearGradient(
@@ -368,15 +364,14 @@ class _TableCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: <Color>[table.base, const Color(0xFF090B12)],
         ),
-        boxShadow:
-            selected
-                ? <BoxShadow>[
-                  BoxShadow(
-                    color: table.accent.withValues(alpha: 0.17),
-                    blurRadius: 22,
-                  ),
-                ]
-                : null,
+        boxShadow: selected
+            ? <BoxShadow>[
+                BoxShadow(
+                  color: table.accent.withValues(alpha: 0.17),
+                  blurRadius: 22,
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: <Widget>[
@@ -395,11 +390,10 @@ class _TableCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     filterQuality: FilterQuality.medium,
                     cacheWidth: 384,
-                    errorBuilder:
-                        (_, __, ___) => CustomPaint(
-                          painter: _CardPreviewPainter(table),
-                          child: const SizedBox.expand(),
-                        ),
+                    errorBuilder: (_, __, ___) => CustomPaint(
+                      painter: _CardPreviewPainter(table),
+                      child: const SizedBox.expand(),
+                    ),
                   ),
                   Align(
                     alignment: Alignment.topLeft,
@@ -469,10 +463,9 @@ class _TableCard extends StatelessWidget {
                       fontSize: 9,
                       letterSpacing: 1.5,
                       fontWeight: FontWeight.w800,
-                      color:
-                          selected
-                              ? table.accent
-                              : Colors.white.withValues(alpha: 0.45),
+                      color: selected
+                          ? table.accent
+                          : Colors.white.withValues(alpha: 0.45),
                     ),
                   ),
                 ],
@@ -630,29 +623,28 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder:
-            (dialogContext) => AlertDialog(
-              backgroundColor: const Color(0xFF111928),
-              title: const Text('GAME OVER'),
-              content: Text('Final score: ${_formatScore(score)}'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                    Navigator.of(context).pop(_peakScore);
-                  },
-                  child: const Text('CHOOSE TABLE'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                    _resultDialogShown = false;
-                    _game.restart();
-                  },
-                  child: const Text('PLAY AGAIN'),
-                ),
-              ],
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: const Color(0xFF111928),
+          title: const Text('GAME OVER'),
+          content: Text('Final score: ${_formatScore(score)}'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Navigator.of(context).pop(_peakScore);
+              },
+              child: const Text('CHOOSE TABLE'),
             ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _resultDialogShown = false;
+                _game.restart();
+              },
+              child: const Text('PLAY AGAIN'),
+            ),
+          ],
+        ),
       );
     });
   }
@@ -702,8 +694,8 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
           Positioned.fill(
             child: Listener(
               behavior: HitTestBehavior.opaque,
-              onPointerDown:
-                  (event) => _handleDown(event, screen.width, screen.height),
+              onPointerDown: (event) =>
+                  _handleDown(event, screen.width, screen.height),
               onPointerUp: (event) => _handleUp(event.pointer),
               onPointerCancel: (event) => _handleUp(event.pointer),
               child: GameWidget(game: _game),
@@ -712,165 +704,147 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
           SafeArea(
             child: ValueListenableBuilder<PinballHud>(
               valueListenable: _game.hud,
-              builder:
-                  (context, state, _) => Column(
-                    children: <Widget>[
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(9, 5, 9, 0),
-                        padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-                        decoration: BoxDecoration(
-                          color: const Color(
-                            0xFF020612,
-                          ).withValues(alpha: 0.78),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: widget.table.accent.withValues(alpha: 0.40),
-                          ),
-                        ),
-                        child: Row(
-                          children: <Widget>[
-                            IconButton(
-                              onPressed: _exitToTables,
-                              icon: const Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 18,
-                              ),
-                              tooltip: 'Choose another table',
-                              visualDensity: VisualDensity.compact,
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    _formatScore(state.score),
-                                    style: const TextStyle(
-                                      fontSize: 21,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 1.5,
-                                    ),
-                                  ),
-                                  Text(
-                                    state.mode.toUpperCase(),
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      color: widget.table.accent,
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              'BALL ${state.balls}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 11,
-                              ),
-                            ),
-                            const SizedBox(width: 3),
-                            IconButton(
-                              onPressed: _toggleAudio,
-                              icon: Icon(
-                                _soundEnabled
-                                    ? Icons.volume_up_rounded
-                                    : Icons.volume_off_rounded,
-                              ),
-                              tooltip:
-                                  _soundEnabled
-                                      ? 'Mute pinball sounds'
-                                      : 'Enable pinball sounds',
-                            ),
-                            IconButton(
-                              onPressed: _game.togglePause,
-                              icon: Icon(
-                                state.isPaused ? Icons.play_arrow : Icons.pause,
-                              ),
-                              tooltip: state.isPaused ? 'Resume' : 'Pause',
-                            ),
-                          ],
-                        ),
+              builder: (context, state, _) => Column(
+                children: <Widget>[
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(9, 5, 9, 0),
+                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF020612).withValues(alpha: 0.78),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: widget.table.accent.withValues(alpha: 0.40),
                       ),
-                      if (state.isMultiball)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            'MULTIBALL!',
-                            style: TextStyle(
-                              color: widget.table.secondary,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 3,
-                              fontSize: 16,
-                            ),
-                          ),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        IconButton(
+                          onPressed: _exitToTables,
+                          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                          tooltip: 'Choose another table',
+                          visualDensity: VisualDensity.compact,
                         ),
-                      if (state.awardLabel.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF030711,
-                              ).withValues(alpha: 0.88),
-                              border: Border.all(
-                                color: widget.table.accent.withValues(
-                                  alpha: 0.6,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                _formatScore(state.score),
+                                style: const TextStyle(
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.5,
                                 ),
                               ),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 4,
-                              ),
-                              child: Text(
-                                state.awardLabel,
+                              Text(
+                                state.mode.toUpperCase(),
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.1,
+                                  fontSize: 9,
                                   color: widget.table.accent,
+                                  letterSpacing: 0.8,
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
-                      const Spacer(),
-                      if (state.isReady)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 90),
-                          child: FilledButton.icon(
-                            onPressed: _game.launch,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: widget.table.accent,
-                              foregroundColor: const Color(0xFF050712),
-                            ),
-                            icon: const Icon(Icons.play_arrow_rounded),
-                            label: const Text('LAUNCH BALL'),
+                        Text(
+                          'BALL ${state.balls}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
                           ),
-                        )
-                      else
-                        const SizedBox(height: 100),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: <Widget>[
-                            _FlipperHint(
-                              color: widget.table.accent,
-                              label: 'LEFT',
-                            ),
-                            _FlipperHint(
-                              color: widget.table.accent,
-                              label: 'RIGHT',
-                            ),
-                          ],
+                        ),
+                        const SizedBox(width: 3),
+                        IconButton(
+                          onPressed: _toggleAudio,
+                          icon: Icon(
+                            _soundEnabled
+                                ? Icons.volume_up_rounded
+                                : Icons.volume_off_rounded,
+                          ),
+                          tooltip: _soundEnabled
+                              ? 'Mute pinball sounds'
+                              : 'Enable pinball sounds',
+                        ),
+                        IconButton(
+                          onPressed: _game.togglePause,
+                          icon: Icon(
+                            state.isPaused ? Icons.play_arrow : Icons.pause,
+                          ),
+                          tooltip: state.isPaused ? 'Resume' : 'Pause',
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (state.isMultiball)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        'MULTIBALL!',
+                        style: TextStyle(
+                          color: widget.table.secondary,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 3,
+                          fontSize: 16,
                         ),
                       ),
-                    ],
+                    ),
+                  if (state.awardLabel.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF030711)
+                              .withValues(alpha: 0.88),
+                          border: Border.all(
+                            color: widget.table.accent.withValues(alpha: 0.6),
+                          ),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 4,
+                          ),
+                          child: Text(
+                            state.awardLabel,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.1,
+                              color: widget.table.accent,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  const Spacer(),
+                  if (state.isReady)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 90),
+                      child: _PlungerControl(
+                        game: _game,
+                        color: widget.table.accent,
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 100),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: <Widget>[
+                        _FlipperHint(color: widget.table.accent, label: 'LEFT'),
+                        _FlipperHint(
+                          color: widget.table.accent,
+                          label: 'RIGHT',
+                        ),
+                      ],
+                    ),
                   ),
+                ],
+              ),
             ),
           ),
         ],
@@ -909,4 +883,94 @@ class _FlipperHint extends StatelessWidget {
 String _formatScore(int score) {
   final raw = score.toString();
   return raw.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+}
+
+/// Captures a single separate pointer so two-thumb flipper inputs remain free.
+/// Downward drag charges the spring, release launches; tap/cancel do nothing.
+class _PlungerControl extends StatefulWidget {
+  const _PlungerControl({required this.game, required this.color});
+
+  final PinballGame game;
+  final Color color;
+
+  @override
+  State<_PlungerControl> createState() => _PlungerControlState();
+}
+
+class _PlungerControlState extends State<_PlungerControl> {
+  int? _activePointer;
+  double _startY = 0;
+  double _charge = 0;
+
+  void _finish(int pointer, {required bool canceled}) {
+    if (_activePointer != pointer) return;
+    final strength = canceled ? null : widget.game.plunger.release();
+    if (canceled) widget.game.plunger.cancel();
+    setState(() {
+      _activePointer = null;
+      _charge = 0;
+    });
+    if (strength != null) widget.game.launch(strength: strength);
+  }
+
+  @override
+  void dispose() {
+    widget.game.plunger.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    behavior: HitTestBehavior.opaque,
+    onPointerDown: (event) {
+      if (_activePointer != null) return;
+      widget.game.plunger.cancel();
+      _activePointer = event.pointer;
+      _startY = event.position.dy;
+      setState(() => _charge = 0);
+    },
+    onPointerMove: (event) {
+      if (_activePointer != event.pointer) return;
+      widget.game.plunger.pull(event.position.dy - _startY);
+      setState(() => _charge = widget.game.plunger.charge);
+    },
+    onPointerUp: (event) => _finish(event.pointer, canceled: false),
+    onPointerCancel: (event) => _finish(event.pointer, canceled: true),
+    child: Container(
+      width: 174,
+      height: 78,
+      decoration: BoxDecoration(
+        color: const Color(0xFF08111D).withValues(alpha: 0.92),
+        border: Border.all(color: widget.color, width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Text(
+            _activePointer == null
+                ? 'PULL DOWN • RELEASE'
+                : 'LAUNCH POWER ${(_charge * 100).round()}%',
+            style: TextStyle(
+              color: widget.color,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.7,
+            ),
+          ),
+          const SizedBox(height: 9),
+          SizedBox(
+            width: 132,
+            child: LinearProgressIndicator(
+              value: _charge,
+              color: widget.color,
+              backgroundColor: const Color(0xFF27364A),
+              minHeight: 7,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
