@@ -30,11 +30,12 @@ jobs:
             lib/main.dart lib/developer_console.dart \
             lib/game/developer_scenarios.dart lib/game/pinball_game.dart \
             lib/game/shooter_lane.dart \
-            test/gameplay_mechanics_test.dart test/shooter_lane_test.dart \
+            test/shooter_lane_test.dart \
             test/shooter_exit_handoff_test.dart test/trajectory_invariants_test.dart \
             test/developer_console_test.dart test/run23_ball_path_and_contact_test.dart; do
             install -Dm644 "$RUNNER_TEMP/pinball_run23_candidate/$path" "$path"
           done
+          printf '%s  %s\n' 'df489abec5eb61bbe8f024aa1e89ae5aa0313879a9ddef39d90f2153eca1ee26' 'test/gameplay_mechanics_test.dart' | sha256sum -c -
       - name: Set up Flutter stable
         uses: subosito/flutter-action@v2
         with:
