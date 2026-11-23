@@ -1,5 +1,7 @@
 // Zero-network, pure-Dart model probe. It does NOT replace flutter test or an
 // actual rendered/mobile game playtest.
+import 'dart:math' as math;
+
 import '../lib/game/plunger_model.dart';
 import '../lib/game/shooter_lane.dart';
 import '../lib/game/swept_rail.dart';
@@ -59,6 +61,41 @@ void main() {
   }
   check(weakReturns > 0, 'supports rollback');
   check(successfulExits > 0, 'supports complete launches');
+
+  // A crossing can happen between two frame endpoints, even when the ball
+  // turns around and the frame ends below the exit again.
+  for (final dt in <double>[0.01, 0.05]) {
+    final hiddenExit = lane.advance(y: 198.05, velocityY: -12, dt: dt);
+    check(hiddenExit.phase == ShooterPhase.exited, 'subframe exit at $dt');
+    check(hiddenExit.y == lane.exitY, 'exact exit position at $dt');
+    check(
+      (hiddenExit.velocityY + math.sqrt(77)).abs() < 1e-10,
+      'exact ascending exit velocity at $dt',
+    );
+  }
+
+  final criticalSpeed =
+      math.sqrt(2 * lane.gravity * (lane.readyY - lane.exitY));
+  final criticalPower =
+      (criticalSpeed - lane.minimumSpeed) /
+      (lane.maximumSpeed - lane.minimumSpeed);
+  for (final dt in <double>[1 / 20, 1 / 30, 1 / 60, 1 / 120]) {
+    for (final delta in <double>[-0.0005, 0.0005]) {
+      var y = lane.readyY;
+      var vy = lane.launchVelocityY(criticalPower + delta);
+      var phase = ShooterPhase.traveling;
+      for (var i = 0; i < 900 && phase == ShooterPhase.traveling; i++) {
+        final step = lane.advance(y: y, velocityY: vy, dt: dt);
+        y = step.y;
+        vy = step.velocityY;
+        phase = step.phase;
+      }
+      check(
+        phase == (delta < 0 ? ShooterPhase.rearmed : ShooterPhase.exited),
+        'near-threshold launch at dt=$dt delta=$delta',
+      );
+    }
+  }
 
   final left = sweepRail(
     fromX: 40,
