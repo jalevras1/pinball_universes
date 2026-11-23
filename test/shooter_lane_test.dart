@@ -96,6 +96,24 @@ void main() {
     expect(step.velocityY, isNot(closeTo(-5.3, 0.01)));
   });
 
+  test('exit transfers only unconsumed frame time to playfield', () {
+    const dt = 0.2;
+    const y = 300.0;
+    const velocity = -1000.0;
+    final step = lane.advance(y: y, velocityY: velocity, dt: dt);
+    final exitSpeed = math.sqrt(
+      velocity * velocity - 2 * lane.gravity * (y - lane.exitY),
+    );
+    final crossingTime = (-velocity - exitSpeed) / lane.gravity;
+    expect(step.phase, ShooterPhase.exited);
+    expect(step.remainingDt, closeTo(dt - crossingTime, 1e-12));
+    expect(step.remainingDt, greaterThan(0));
+
+    final noExit = lane.advance(y: y, velocityY: velocity, dt: 0.01);
+    expect(noExit.phase, ShooterPhase.traveling);
+    expect(noExit.remainingDt, 0);
+  });
+
   test('near-clear weak and strong shots agree across frame rates', () {
     final critical = math.sqrt(2 * lane.gravity * (lane.readyY - lane.exitY));
     final powerAtExit =
