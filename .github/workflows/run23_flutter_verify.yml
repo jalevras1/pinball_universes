@@ -6,7 +6,7 @@ on:
       - 'feature/pinball-run23-physics-event-telemetry-20261123'
     paths:
       - '.github/workflows/run23_flutter_verify.yml'
-      - 'PINBALL_RUN23_PHYSICS_TELEMETRY_CANDIDATE_20261123.zip'
+      - 'PINBALL_RUN24_REMOTE_MECHANICS_FIX_CANDIDATE_20261123.zip'
   workflow_dispatch:
 
 permissions:
@@ -24,8 +24,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$GITHUB_REF_NAME" = 'feature/pinball-run23-physics-event-telemetry-20261123'
-          printf '%s  %s\n' 'c360bb04ac72bd71289f2f33ec897bc4d660343ed47a8225db559cb592fbfa5e' 'PINBALL_RUN23_PHYSICS_TELEMETRY_CANDIDATE_20261123.zip' | sha256sum -c -
-          unzip -oq PINBALL_RUN23_PHYSICS_TELEMETRY_CANDIDATE_20261123.zip -d "$RUNNER_TEMP"
+          printf '%s  %s\n' '50788d73a09ba5ef6ee9a9f37e06cc3043fb746749c43f6ee9e99fd15b022300' 'PINBALL_RUN24_REMOTE_MECHANICS_FIX_CANDIDATE_20261123.zip' | sha256sum -c -
+          unzip -oq PINBALL_RUN24_REMOTE_MECHANICS_FIX_CANDIDATE_20261123.zip -d "$RUNNER_TEMP"
           for path in \
             lib/main.dart lib/developer_console.dart \
             lib/game/developer_scenarios.dart lib/game/pinball_game.dart \
@@ -35,7 +35,6 @@ jobs:
             test/developer_console_test.dart test/run23_ball_path_and_contact_test.dart; do
             install -Dm644 "$RUNNER_TEMP/pinball_run23_candidate/$path" "$path"
           done
-          sed -i "1i import 'package:flutter/foundation.dart' show ValueListenable;" lib/developer_console.dart
       - name: Set up Flutter stable
         uses: subosito/flutter-action@v2
         with:
@@ -56,11 +55,16 @@ jobs:
       - name: Static analysis (blocking errors)
         run: flutter analyze --no-fatal-infos
       - name: Unit and widget tests
+        id: unit_tests
+        continue-on-error: true
         run: flutter test
       - name: Production web build
         run: flutter build web --release
       - name: Source whitespace integrity
         run: git diff --check
+      - name: Unit test gate
+        if: always()
+        run: test "${{ steps.unit_tests.outcome }}" = success
       - name: Strict analysis gate
         if: always()
         run: test "${{ steps.strict_analysis.outcome }}" = success
