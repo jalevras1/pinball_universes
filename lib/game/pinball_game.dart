@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../audio/pinball_audio.dart';
+import 'developer_scenarios.dart';
 import 'plunger_model.dart';
 import 'shooter_lane.dart';
 import 'swept_rail.dart';
@@ -95,6 +96,10 @@ class PinballGame extends FlameGame {
   final ValueChanged<int> onGameFinished;
   final PinballAudio? audio;
   final ValueNotifier<PinballHud> hud;
+  /// Bounded, event-driven evidence from the real solver, not fake test scores.
+  /// The DEV panel observes this without causing a rebuild every physics tick.
+  final ValueNotifier<List<String>> developerEvents =
+      ValueNotifier<List<String>>(<String>[]);
   final PlungerModel plunger = PlungerModel();
   static const ShooterLane _shooterLane = ShooterLane();
 
@@ -132,6 +137,84 @@ class PinballGame extends FlameGame {
       ..add(_Ball(position, velocity));
     _notifyHud();
   }
+
+  /// Repeat real contact scenarios without restarting the app. No points are
+  /// injected directly: the physics collision or drain must actually occur.
+  bool runDeveloperScenario(PinballDeveloperScenario scenario) {
+    if (_rails.isEmpty) return false;
+    developerSession = true;
+    if (_paused) togglePause();
+    if (_finished) restart();
+    _logDeveloperEvent('TEST ${scenario.label}');
+    switch (scenario) {
+      case PinballDeveloperScenario.weakLaunch:
+        restart();
+        launch(strength: 0.05);
+      case PinballDeveloperScenario.skillLaunch:
+        restart();
+        launch(strength: 0.17);
+      case PinballDeveloperScenario.mediumLaunch:
+        restart();
+        launch(strength: 0.6);
+      case PinballDeveloperScenario.fullLaunch:
+        restart();
+        launch(strength: 1);
+      case PinballDeveloperScenario.leftFlipper:
+        debugPlaceBall(const Offset(174, 644), const Offset(0, 400));
+        leftPressed = true;
+        rightPressed = false;
+      case PinballDeveloperScenario.rightFlipper:
+        debugPlaceBall(const Offset(226, 644), const Offset(0, 400));
+        leftPressed = false;
+        rightPressed = true;
+      case PinballDeveloperScenario.bumperContact:
+        final bumper = _bumpers.first;
+        // Approach from the open lower face. On Chrono Citadel the upper
+        // guide crosses directly above this bumper, so a top-down test ball
+        // hits the rail first and never exercises the bumper collider.
+        debugPlaceBall(
+          Offset(bumper.center.dx, bumper.center.dy + bumper.radius + 30),
+          const Offset(0, -450),
+        );
+        leftPressed = false;
+        rightPressed = false;
+      case PinballDeveloperScenario.drain:
+        debugPlaceBall(const Offset(200, 750), const Offset(0, 400));
+        leftPressed = false;
+        rightPressed = false;
+      case PinballDeveloperScenario.resetRound:
+        restart();
+    }
+    return true;
+  }
+
+  /// Move exactly one fixed physics frame while PAUSED. The running game,
+  /// sound settings, table, and current ball remain in place.
+  bool developerStepPausedPhysics() {
+    if (!_paused || _finished || _rails.isEmpty) return false;
+    developerSession = true;
+    _simulate(1 / 120);
+    _logDeveloperEvent('STEP 1/120');
+    return true;
+  }
+
+  void clearDeveloperEvents() => developerEvents.value = <String>[];
+
+  void _logDeveloperEvent(String detail) {
+    if (!developerSession) return;
+    final entry = '${_time.toStringAsFixed(2)}s  $detail';
+    final recent = developerEvents.value;
+    developerEvents.value = <String>[
+      ...recent.skip(recent.length > 9 ? recent.length - 9 : 0),
+      entry,
+    ];
+  }
+
+  /// Diagnostic layer uses real solver coordinates; never final playfield art.
+  bool developerCollisionOverlay = false;
+
+  /// Diagnostic injections must never enter the player's high-score record.
+  bool developerSession = false;
 
   final List<_Ball> _balls = <_Ball>[];
   final List<_Segment> _rails = <_Segment>[];
@@ -399,6 +482,7 @@ class PinballGame extends FlameGame {
     if (didLaunch && !reducedMotion) _cinematicTime = 0;
     if (didLaunch) _pulse(const Offset(352, 651), table.accent, size: 1.8);
     if (didLaunch) audio?.play(PinballSound.launch);
+    if (didLaunch) _logDeveloperEvent('PLUNGER ${(strength * 100).round()}%');
     _notifyHud();
   }
 
@@ -484,6 +568,7 @@ class PinballGame extends FlameGame {
 
     for (final ball in List<_Ball>.of(_balls)) {
       if (ball.inShooter) continue;
+      var flightDt = dt;
       // A very soft shot can barely clear the divider and fall back into the
       // tube. Recapture instead of draining a ball that never reached play.
       if (!ball.inShooterLane &&
@@ -509,25 +594,33 @@ class PinballGame extends FlameGame {
           ball.inShooterLane = false;
           ball.velocity = Offset.zero;
           ball.trail.clear();
+          _logDeveloperEvent('SHOOTER REARMED');
           _notifyHud();
+          continue;
         } else if (shot.phase == ShooterPhase.exited) {
-          // Starting NEXT physics tick, upper guide rails redirect the ball.
+          // Hand unused frame time directly to the playfield. Without this,
+          // near-identical launches diverge at different physics tick rates.
           ball.inShooterLane = false;
+          _logDeveloperEvent(
+            'SHOOTER EXIT vY=${shot.velocityY.toStringAsFixed(0)}',
+          );
+          flightDt = shot.remainingDt;
+          if (flightDt <= 0) continue;
         } else {
           ball.trail.add(ball.position);
           if (ball.trail.length > 7) ball.trail.removeAt(0);
+          continue;
         }
-        continue;
       }
-      ball.portalCooldown = math.max(0.0, ball.portalCooldown - dt);
+      ball.portalCooldown = math.max(0.0, ball.portalCooldown - flightDt);
       ball.velocity = Offset(
         ball.velocity.dx * 0.9994,
-        ball.velocity.dy + 670 * dt,
+        ball.velocity.dy + 670 * flightDt,
       );
       final speed = ball.velocity.distance;
       if (speed > 1600) ball.velocity = ball.velocity * (1600 / speed);
       var previousPosition = ball.position;
-      ball.position += ball.velocity * dt;
+      ball.position += ball.velocity * flightDt;
 
       for (final rail in _rails) {
         if (_collideSegment(
@@ -565,7 +658,12 @@ class PinballGame extends FlameGame {
             PinballUniverseId.neon => PinballSound.bumperNeon,
             PinballUniverseId.clockwork => PinballSound.bumperClockwork,
           });
+          final oldScore = _score;
           _registerHit(bumper.value);
+          _logDeveloperEvent(
+            'BUMPER ${i + 1} +${_score - oldScore}'
+            ' @(${bumper.center.dx.round()},${bumper.center.dy.round()})',
+          );
         }
       }
       _specialBehavior(ball);
@@ -573,6 +671,9 @@ class PinballGame extends FlameGame {
       if (ball.position.dy > 745 ||
           ball.position.dx < -50 ||
           ball.position.dx > 450) {
+        _logDeveloperEvent(
+          'DRAIN @(${ball.position.dx.round()},${ball.position.dy.round()})',
+        );
         _balls.remove(ball);
         audio?.play(PinballSound.drain);
       }
@@ -585,12 +686,14 @@ class PinballGame extends FlameGame {
       if (_ballSaverUntil > _time) {
         _ballSaverUntil = 0;
         _announce('BALL SAVED', seconds: 1.8);
+        _logDeveloperEvent('BALL SAVED');
         audio?.play(PinballSound.award);
         _pulse(const Offset(200, 678), table.accent, size: 2.8);
         _prepareBall();
         return;
       }
       _ballsToPlay--;
+      _logDeveloperEvent('BALL LOST • $_ballsToPlay LEFT');
       if (_ballsToPlay <= 0) {
         _finished = true;
         hud.value = PinballHud(
@@ -777,6 +880,9 @@ class PinballGame extends FlameGame {
       if (_time - (ball.lastBumperHit[-1] ?? -100) > 0.10) {
         ball.lastBumperHit[-1] = _time;
         _score += 10;
+        _logDeveloperEvent(
+          '${left ? 'LEFT' : 'RIGHT'} FLIPPER HIT vY=${ball.velocity.dy.toStringAsFixed(0)}',
+        );
         audio?.play(PinballSound.flipper);
         _notifyHud();
       }
@@ -836,6 +942,10 @@ class PinballGame extends FlameGame {
   void _railImpactSound(Offset contact, double incoming) {
     if (incoming >= -260 || _time - _lastRailImpact <= 0.10) return;
     _lastRailImpact = _time;
+    _logDeveloperEvent(
+      'RAIL @(${contact.dx.round()},${contact.dy.round()}) '
+      'impact=${incoming.abs().round()}',
+    );
     _pulse(contact, table.accent, size: 0.75);
     audio?.play(PinballSound.rail);
   }
@@ -877,7 +987,70 @@ class PinballGame extends FlameGame {
       );
     }
     _renderBoard(canvas);
+    if (developerCollisionOverlay) _renderDeveloperCollisionOverlay(canvas);
     canvas.restore();
+  }
+
+  void _renderDeveloperCollisionOverlay(Canvas c) {
+    final envelope = Paint()
+      ..color = const Color(0x6637F2BE)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _ballRadius * 2;
+    final outline = Paint()
+      ..color = const Color(0xEE37F2BE)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    for (final rail in _rails) {
+      c.drawLine(rail.a, rail.b, envelope);
+      c.drawLine(rail.a, rail.b, outline);
+    }
+    final bumperPaint = Paint()
+      ..color = const Color(0xDDFF8AC9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8;
+    for (final bumper in _bumpers) {
+      c.drawCircle(
+        bumper.center,
+        bumper.radius + _ballRadius,
+        bumperPaint,
+      );
+    }
+    for (final left in <bool>[true, false]) {
+      final pivot = left ? _leftPivot : _rightPivot;
+      final lift = left ? _leftLift : _rightLift;
+      final angle = left ? -0.19 - lift * 0.67 : math.pi + 0.19 + lift * 0.67;
+      final tip = pivot + Offset(math.cos(angle) * 78, math.sin(angle) * 78);
+      c.drawLine(
+        pivot,
+        tip,
+        Paint()
+          ..color = const Color(0x55FFD378)
+          ..strokeWidth = 2 * (_ballRadius + 11)
+          ..strokeCap = StrokeCap.round,
+      );
+      c.drawLine(
+        pivot,
+        tip,
+        Paint()
+          ..color = const Color(0xFFFFD378)
+          ..strokeWidth = 1.5,
+      );
+    }
+    c.drawLine(
+      Offset(_shooterLane.centerX, _shooterLane.readyY),
+      Offset(_shooterLane.centerX, _shooterLane.exitY),
+      Paint()
+        ..color = const Color(0xCCFFFF70)
+        ..strokeWidth = 1.5,
+    );
+    c.drawCircle(
+      Offset(_shooterLane.centerX, _shooterLane.exitY),
+      _ballRadius,
+      Paint()
+        ..color = const Color(0xFFFFFF70)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
   }
 
   void _renderBoard(Canvas c) {

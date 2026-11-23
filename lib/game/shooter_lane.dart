@@ -7,11 +7,20 @@ import 'dart:math' as math;
 enum ShooterPhase { traveling, exited, rearmed }
 
 class ShooterStep {
-  const ShooterStep(this.y, this.velocityY, this.phase);
+  const ShooterStep(
+    this.y,
+    this.velocityY,
+    this.phase, {
+    this.remainingDt = 0,
+  });
 
   final double y;
   final double velocityY;
   final ShooterPhase phase;
+
+  /// Unspent time after the first upward tube-exit crossing. The playfield
+  /// must simulate this remainder in the SAME tick to avoid frame-rate drift.
+  final double remainingDt;
 }
 
 class ShooterLane {
@@ -63,7 +72,12 @@ class ShooterLane {
         final exitSpeed = math.sqrt(discriminant);
         final timeToExit = (-velocityY - exitSpeed) / gravity;
         if (timeToExit >= 0 && timeToExit <= dt) {
-          return ShooterStep(exitY, -exitSpeed, ShooterPhase.exited);
+          return ShooterStep(
+            exitY,
+            -exitSpeed,
+            ShooterPhase.exited,
+            remainingDt: math.max(0, dt - timeToExit),
+          );
         }
       }
     }
