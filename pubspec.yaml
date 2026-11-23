@@ -23,5 +23,6 @@ flutter:
   assets:
     - assets/universe_covers/
     - assets/backplates/
+    - assets/machines/
     - assets/gameplay/
     - assets/audio/
