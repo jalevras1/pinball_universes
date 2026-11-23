@@ -35,6 +35,20 @@ void main() {
     }
   });
 
+  test('the three flagship arcade machines have complete fixed art and movable flipper layers', () async {
+    for (final theme in <String>['celestial', 'neon', 'clockwork']) {
+      final machine = switch (theme) {
+        'celestial' => 'celestial_orrery.png',
+        'neon' => 'neon_velocity.png',
+        _ => 'clockwork_mechanism.png',
+      };
+      final imageData = await rootBundle.load('assets/machines/$machine');
+      final flipperData = await rootBundle.load('assets/machines/flipper_$theme.png');
+      expect(imageData.lengthInBytes, greaterThan(100000), reason: machine);
+      expect(flipperData.lengthInBytes, greaterThan(100000), reason: theme);
+    }
+  });
+
   test('the complete sound set is bundled', () async {
     for (final name in <String>[
       'launch',
