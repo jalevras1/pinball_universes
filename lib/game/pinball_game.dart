@@ -6,13 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../audio/pinball_audio.dart';
+import 'machine_blueprints.dart';
 import 'table_data.dart';
 
 const double _boardWidth = 400;
 const double _boardHeight = 760;
 const double _ballRadius = 7.5;
-const Offset _leftPivot = Offset(127, 664);
-const Offset _rightPivot = Offset(273, 664);
 
 class PinballHud {
   const PinballHud({
@@ -96,10 +95,12 @@ class PinballGame extends FlameGame {
   final List<_Bumper> _bumpers = <_Bumper>[];
   final List<_Impact> _impacts = <_Impact>[];
   final Map<int, double> _bumperLastGlow = <int, double>{};
+  MachineBlueprint? _machine;
   ui.Image? _ballSprite;
   ui.Image? _bumperSprite;
   ui.Image? _backplateSprite;
   ui.Image? _hazardSprite;
+  ui.Image? _flipperSprite;
   bool _spritesReleased = false;
 
   bool leftPressed = false;
@@ -122,6 +123,12 @@ class PinballGame extends FlameGame {
   double _lastRailImpact = -100;
   String _awardText = '';
   bool reducedMotion = false;
+  /// Hidden by default. Long-press the HUD score during phone calibration.
+  bool showCollisionDebug = false;
+
+  Offset get _leftPivot => _machine?.leftFlipperWorld ?? const Offset(127, 664);
+  Offset get _rightPivot => _machine?.rightFlipperWorld ?? const Offset(273, 664);
+  double get _flipperLength => _machine?.flipperLength ?? 78;
 
   @override
   Color backgroundColor() => const Color(0xFF02040C);
@@ -129,6 +136,7 @@ class PinballGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    _machine = flagshipMachineBlueprint(table.id);
     _configureTable();
     _ballSprite = await _loadSprite('assets/gameplay/steel_ball.png', 128);
     _bumperSprite = await _loadSprite(
@@ -136,9 +144,15 @@ class PinballGame extends FlameGame {
       192,
     );
     _backplateSprite = await _loadSprite(
-      'assets/backplates/${table.universe.name}.png',
-      512,
+      _machine?.artAsset ?? 'assets/backplates/${table.universe.name}.png',
+      _machine == null ? 512 : 1024,
     );
+    if (_machine != null) {
+      _flipperSprite = await _loadSprite(
+        'assets/machines/flipper_${table.universe.name}.png',
+        512,
+      );
+    }
     final hazardAsset = switch (table.universe) {
       PinballUniverseId.celestial when table.variant == 0 =>
         'assets/gameplay/portal_celestial.png',
@@ -181,13 +195,27 @@ class PinballGame extends FlameGame {
     _bumperSprite?.dispose();
     _backplateSprite?.dispose();
     _hazardSprite?.dispose();
+    _flipperSprite?.dispose();
     _ballSprite = null;
     _bumperSprite = null;
     _backplateSprite = null;
     _hazardSprite = null;
+    _flipperSprite = null;
   }
 
   void _configureTable() {
+    final machine = _machine;
+    if (machine != null) {
+      // Physical geometry is expressed in the same 1024x1536 image coordinates
+      // as the visible assembled machine. No unrelated generic debug rails.
+      for (final (a, b) in machine.worldWallSegments) {
+        _rails.add(_Segment(a, b));
+      }
+      for (final target in machine.targets) {
+        _bumpers.add(_Bumper(target.worldCenter, target.worldRadius, target.score));
+      }
+      return;
+    }
     // Outer wall, sloping inlanes, shooter divider, and drain guides.
     _rails.addAll(const <_Segment>[
       _Segment(Offset(31, 690), Offset(31, 116)),
@@ -333,7 +361,8 @@ class PinballGame extends FlameGame {
 
   void _prepareBall() {
     if (_finished) return;
-    final ball = _Ball(const Offset(352, 653), Offset.zero)..inShooter = true;
+    final ball = _Ball(_machine?.shooterWorld ?? const Offset(352, 653), Offset.zero)
+      ..inShooter = true;
     _balls.add(ball);
     _notifyHud();
   }
@@ -348,7 +377,7 @@ class PinballGame extends FlameGame {
       didLaunch = true;
     }
     if (didLaunch && !reducedMotion) _cinematicTime = 0;
-    if (didLaunch) _pulse(const Offset(352, 651), table.accent, size: 1.8);
+    if (didLaunch) _pulse(_machine?.shooterWorld ?? const Offset(352, 651), table.accent, size: 1.8);
     if (didLaunch) audio?.play(PinballSound.launch);
     _notifyHud();
   }
@@ -478,7 +507,7 @@ class PinballGame extends FlameGame {
       }
       _specialBehavior(ball);
 
-      if (ball.position.dy > 745 ||
+      if (ball.position.dy > (_machine?.drainWorldY ?? 745) + (_machine == null ? 0 : 8) ||
           ball.position.dx < -50 ||
           ball.position.dx > 450) {
         _balls.remove(ball);
@@ -518,6 +547,19 @@ class PinballGame extends FlameGame {
   }
 
   void _specialBehavior(_Ball ball) {
+    if (_machine != null) {
+      // Interactions use the painted hardware positions rather than the old
+      // decorative locations from the early test-only layouts.
+      switch (table.universe) {
+        case PinballUniverseId.celestial:
+          _portal(ball, machinePoint(const Offset(870, 352)), machinePoint(const Offset(310, 235)));
+        case PinballUniverseId.neon:
+          _gravityWell(ball, neonMachine.signatureWorld, radius: 83, pull: 170);
+        case PinballUniverseId.clockwork:
+          _movingGear(ball, machinePoint(const Offset(830, 175)));
+      }
+      return;
+    }
     switch (table.universe) {
       case PinballUniverseId.celestial:
         if (table.variant == 0) {
@@ -673,8 +715,8 @@ class PinballGame extends FlameGame {
   void _collideFlipper(_Ball ball, {required bool left}) {
     final a = left ? _leftPivot : _rightPivot;
     final lift = left ? _leftLift : _rightLift;
-    final radians = left ? -0.19 - lift * 0.67 : math.pi + 0.19 + lift * 0.67;
-    final b = a + Offset(math.cos(radians) * 78, math.sin(radians) * 78);
+    final radians = _flipperAngle(left, lift);
+    final b = a + Offset(math.cos(radians) * _flipperLength, math.sin(radians) * _flipperLength);
     if (!_collideSegment(ball, a, b, 0.78, width: 11)) return;
     final pressed = left ? leftPressed : rightPressed;
     if (pressed && ball.position.dy < a.dy + 18) {
@@ -726,6 +768,14 @@ class PinballGame extends FlameGame {
   double _approach(double current, double target, double maxDelta) =>
       current + (target - current).clamp(-maxDelta, maxDelta).toDouble();
 
+  double _flipperAngle(bool left, double lift) {
+    if (_machine != null) {
+      // Neutral paddles point down towards the drain as in the painted source.
+      return left ? 0.18 - lift * 0.79 : math.pi - 0.18 + lift * 0.79;
+    }
+    return left ? -0.19 - lift * 0.67 : math.pi + 0.19 + lift * 0.67;
+  }
+
   @override
   void render(Canvas canvas) {
     super.render(canvas);
@@ -763,6 +813,42 @@ class PinballGame extends FlameGame {
   }
 
   void _renderBoard(Canvas c) {
+    final machine = _machine;
+    if (machine != null) {
+      // One complete original 2D arcade-machine illustration, fitted at its
+      // native 2:3 aspect ratio. No wallpaper crop, stretch, tint or debug rails.
+      c.drawRect(machineArtworkRect, Paint()..color = table.base);
+      if (_backplateSprite case final painting?) {
+        c.drawImageRect(
+          painting,
+          Rect.fromLTWH(0, 0, painting.width.toDouble(), painting.height.toDouble()),
+          machineArtworkRect,
+          Paint()..filterQuality = FilterQuality.high,
+        );
+      } else {
+        // Visible fallback only if asset loading failed; physics stays active.
+        for (final rail in _rails) {
+          _glowLine(c, rail.a, rail.b, table.accent, 4);
+        }
+      }
+      // Each target is already depicted in the machine art. Draw only reactive
+      // light on impact, not a second non-matching physical sprite.
+      for (var i = 0; i < _bumpers.length; i++) {
+        final sinceHit = _time - (_bumperLastGlow[i] ?? -100);
+        if (sinceHit >= 0.28) continue;
+        final strength = (1 - sinceHit / 0.28).clamp(0.0, 1.0).toDouble();
+        _drawRing(
+          c, _bumpers[i].center, _bumpers[i].radius + 3 + sinceHit * 45,
+          table.accent.withValues(alpha: strength * 0.8), 3,
+        );
+      }
+      _drawImpacts(c);
+      _drawFlipper(c, _leftPivot, true, _leftLift);
+      _drawFlipper(c, _rightPivot, false, _rightLift);
+      _drawBalls(c);
+      if (showCollisionDebug) _drawCollisionDebug(c);
+      return;
+    }
     final board = RRect.fromRectAndRadius(
       const Rect.fromLTWH(12, 12, 376, 736),
       const Radius.circular(26),
@@ -882,6 +968,10 @@ class PinballGame extends FlameGame {
       6,
     );
 
+    _drawBalls(c);
+  }
+
+  void _drawBalls(Canvas c) {
     for (final ball in _balls) {
       for (var i = 0; i < ball.trail.length; i++) {
         final alpha = (i + 1) / (ball.trail.length + 1) * 0.22;
@@ -921,6 +1011,30 @@ class PinballGame extends FlameGame {
           Paint()..color = Colors.white,
         );
       }
+    }
+  }
+
+  void _drawCollisionDebug(Canvas c) {
+    final wall = Paint()
+      ..color = const Color(0xE0FF8B3D)
+      ..strokeWidth = 1.3
+      ..style = PaintingStyle.stroke;
+    final target = Paint()
+      ..color = const Color(0xE06BFF62)
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke;
+    for (final rail in _rails) {
+      c.drawLine(rail.a, rail.b, wall);
+      c.drawCircle(rail.a, 2.0, wall);
+    }
+    for (final bumper in _bumpers) {
+      c.drawCircle(bumper.center, bumper.radius + _ballRadius, target);
+      c.drawCircle(bumper.center, 2.5, target);
+    }
+    if (_machine != null) {
+      c.drawCircle(_machine!.shooterWorld, 4, target);
+      c.drawLine(Offset(22, _machine!.drainWorldY),
+          Offset(390, _machine!.drainWorldY), wall);
     }
   }
 
@@ -1239,8 +1353,24 @@ class PinballGame extends FlameGame {
   }
 
   void _drawFlipper(Canvas c, Offset pivot, bool left, double lift) {
-    final angle = left ? -0.19 - lift * 0.67 : math.pi + 0.19 + lift * 0.67;
-    final tip = pivot + Offset(math.cos(angle) * 78, math.sin(angle) * 78);
+    final angle = _flipperAngle(left, lift);
+    final length = _flipperLength;
+    final sprite = _flipperSprite;
+    if (_machine != null && sprite != null) {
+      c.save();
+      c.translate(pivot.dx, pivot.dy);
+      c.rotate(left ? angle : angle - math.pi);
+      if (!left) c.scale(-1, 1);
+      c.drawImageRect(
+        sprite,
+        Rect.fromLTWH(0, 0, sprite.width.toDouble(), sprite.height.toDouble()),
+        Rect.fromLTWH(-11, -15, length + 22, 30),
+        Paint()..filterQuality = FilterQuality.high,
+      );
+      c.restore();
+      return;
+    }
+    final tip = pivot + Offset(math.cos(angle) * length, math.sin(angle) * length);
     _glowLine(c, pivot, tip, table.secondary, 18);
     c.drawLine(
       pivot,
