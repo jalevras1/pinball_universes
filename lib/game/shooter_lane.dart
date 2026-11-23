@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 /// Deterministic shooter-tube motion in the game's fixed playfield coordinates.
 ///
 /// This intentionally has no horizontal impulse. The real upper guide rail
@@ -49,11 +51,24 @@ class ShooterLane {
     if (!y.isFinite || !velocityY.isFinite || !dt.isFinite || dt < 0) {
       throw ArgumentError('Shooter requires finite state and nonnegative dt.');
     }
+    // Solve the FIRST ascending crossing inside the frame. Checking only the
+    // frame endpoint misses near-threshold shots that clear the exit and turn
+    // around before the next frame. It also gives the wrong exit speed when
+    // a ball is clamped to exitY after crossing early in the frame.
+    if (velocityY < 0 && y >= exitY && dt > 0) {
+      final distanceToExit = y - exitY;
+      final discriminant =
+          velocityY * velocityY - 2 * gravity * distanceToExit;
+      if (discriminant >= 0) {
+        final exitSpeed = math.sqrt(discriminant);
+        final timeToExit = (-velocityY - exitSpeed) / gravity;
+        if (timeToExit >= 0 && timeToExit <= dt) {
+          return ShooterStep(exitY, -exitSpeed, ShooterPhase.exited);
+        }
+      }
+    }
     final nextY = y + velocityY * dt + 0.5 * gravity * dt * dt;
     final nextVelocity = velocityY + gravity * dt;
-    if (velocityY < 0 && nextY <= exitY) {
-      return ShooterStep(exitY, nextVelocity, ShooterPhase.exited);
-    }
     if (nextVelocity >= 0 && nextY >= readyY) {
       return ShooterStep(readyY, 0, ShooterPhase.rearmed);
     }
