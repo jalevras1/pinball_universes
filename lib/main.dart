@@ -621,6 +621,18 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
     if (_soundEnabled) _audio.play(PinballSound.award);
   }
 
+  void _toggleCollisionDebug() {
+    setState(() => _game.showCollisionDebug = !_game.showCollisionDebug);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_game.showCollisionDebug
+            ? 'Collider calibration ON — orange walls, green targets'
+            : 'Collider calibration OFF'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _onGameFinished(int score) {
     _peakScore = math.max(_peakScore, score);
     if (_resultDialogShown) return;
@@ -739,27 +751,31 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
                               visualDensity: VisualDensity.compact,
                             ),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    _formatScore(state.score),
-                                    style: const TextStyle(
-                                      fontSize: 21,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 1.5,
+                              child: GestureDetector(
+                                onLongPress: _toggleCollisionDebug,
+                                behavior: HitTestBehavior.opaque,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      _formatScore(state.score),
+                                      style: const TextStyle(
+                                        fontSize: 21,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1.5,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    state.mode.toUpperCase(),
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      color: widget.table.accent,
-                                      letterSpacing: 0.8,
+                                    Text(
+                                      state.mode.toUpperCase(),
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: widget.table.accent,
+                                        letterSpacing: 0.8,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                             Text(
