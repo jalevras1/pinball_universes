@@ -35,6 +35,7 @@ jobs:
             test/developer_console_test.dart test/run23_ball_path_and_contact_test.dart; do
             install -Dm644 "$RUNNER_TEMP/pinball_run23_candidate/$path" "$path"
           done
+          sed -i "1i import 'package:flutter/foundation.dart' show ValueListenable;" lib/developer_console.dart
       - name: Set up Flutter stable
         uses: subosito/flutter-action@v2
         with:
@@ -48,11 +49,18 @@ jobs:
         run: dart format lib/main.dart lib/developer_console.dart lib/game/developer_scenarios.dart lib/game/pinball_game.dart lib/game/shooter_lane.dart test/gameplay_mechanics_test.dart test/shooter_lane_test.dart test/shooter_exit_handoff_test.dart test/trajectory_invariants_test.dart test/developer_console_test.dart test/run23_ball_path_and_contact_test.dart
       - name: Resolve dependencies
         run: flutter pub get
-      - name: Static analysis
+      - name: Static analysis (strict)
+        id: strict_analysis
+        continue-on-error: true
         run: flutter analyze
+      - name: Static analysis (blocking errors)
+        run: flutter analyze --no-fatal-infos
       - name: Unit and widget tests
         run: flutter test
       - name: Production web build
         run: flutter build web --release
       - name: Source whitespace integrity
         run: git diff --check
+      - name: Strict analysis gate
+        if: always()
+        run: test "${{ steps.strict_analysis.outcome }}" = success
