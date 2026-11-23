@@ -42,9 +42,11 @@ or reported as installed until CI and physical gameplay checks pass.
 
 Additional confirmed checks: `git diff --check` produced no whitespace errors;
 ImageMagick found all three fixed playfields at 1024x1536 RGB and all three
-flipper layers at 2172x724 RGBA, with nontrivial transparent area. The proposed
-new GitHub branch could not be created by the connected app: GitHub returned
-HTTP 403 `Resource not accessible by integration`. A direct Git push from this
-environment also lacked authenticated credentials. Therefore the live GitHub
-repository was **NOT** changed; save this complete source candidate privately
-until the owner resolves GitHub write authorization and Flutter tests can run.
+flipper layers at 2172x724 RGBA, with nontrivial transparent area. On
+2026-11-23, the owner authorized the signed-in GitHub web session and the
+source candidate was committed to the isolated branch
+`feature/pinball-illustrated-machines-20261123`, based on
+`chatgpt-pinball-development`. All 14 changed paths were verified against
+the source candidate with `git diff --name-status` and matched exactly.
+The playable development branch was not merged or switched. A code commit
+is not proof of a passing Flutter build or an owner-approved visual test.
