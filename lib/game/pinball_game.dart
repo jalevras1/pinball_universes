@@ -2,10 +2,14 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 import '../audio/pinball_audio.dart';
+import 'plunger_model.dart';
+import 'shooter_lane.dart';
+import 'swept_rail.dart';
 import 'table_data.dart';
 
 const double _boardWidth = 400;
@@ -40,6 +44,7 @@ class _Ball {
   Offset position;
   Offset velocity;
   bool inShooter = false;
+  bool inShooterLane = false;
   double portalCooldown = 0;
   final List<Offset> trail = <Offset>[];
   final Map<int, double> lastBumperHit = <int, double>{};
@@ -90,7 +95,44 @@ class PinballGame extends FlameGame {
   final ValueChanged<int> onGameFinished;
   final PinballAudio? audio;
   final ValueNotifier<PinballHud> hud;
-  final math.Random _random = math.Random();
+  final PlungerModel plunger = PlungerModel();
+  static const ShooterLane _shooterLane = ShooterLane();
+
+  // Deterministic physics harness: tests can exercise actual gameplay rules
+  // without decoding large artwork or launching a browser.
+  @visibleForTesting
+  void debugInitializePhysics() {
+    if (_rails.isNotEmpty || _balls.isNotEmpty) {
+      throw StateError('Physics must be initialized only once.');
+    }
+    _configureTable();
+    _prepareBall();
+  }
+
+  @visibleForTesting
+  void debugStepPhysics(double dt) {
+    if (!_paused && !_finished) _simulate(dt);
+  }
+
+  @visibleForTesting
+  List<Offset> get debugBallPositions =>
+      List<Offset>.unmodifiable(_balls.map((ball) => ball.position));
+
+  @visibleForTesting
+  List<Offset> get debugBallVelocities =>
+      List<Offset>.unmodifiable(_balls.map((ball) => ball.velocity));
+
+  @visibleForTesting
+  bool get debugBallInTube => _balls.any((ball) => ball.inShooterLane);
+
+  @visibleForTesting
+  void debugPlaceBall(Offset position, Offset velocity) {
+    _balls
+      ..clear()
+      ..add(_Ball(position, velocity));
+    _notifyHud();
+  }
+
   final List<_Ball> _balls = <_Ball>[];
   final List<_Segment> _rails = <_Segment>[];
   final List<_Bumper> _bumpers = <_Bumper>[];
@@ -333,18 +375,25 @@ class PinballGame extends FlameGame {
 
   void _prepareBall() {
     if (_finished) return;
-    final ball = _Ball(const Offset(352, 653), Offset.zero)..inShooter = true;
+    final ball = _Ball(
+      Offset(_shooterLane.centerX, _shooterLane.readyY),
+      Offset.zero,
+    )..inShooter = true;
     _balls.add(ball);
     _notifyHud();
   }
 
-  void launch() {
+  /// Power is the ONLY shot variable. The ball remains on the shooter centerline
+  /// until it reaches the real exit guide at the top of the tube.
+  void launch({double strength = 1}) {
     if (_paused || _finished) return;
     var didLaunch = false;
     for (final ball in _balls) {
       if (!ball.inShooter) continue;
       ball.inShooter = false;
-      ball.velocity = Offset(-40 - _random.nextDouble() * 30, -1140);
+      ball.inShooterLane = true;
+      ball.position = Offset(_shooterLane.centerX, _shooterLane.readyY);
+      ball.velocity = Offset(0, _shooterLane.launchVelocityY(strength));
       didLaunch = true;
     }
     if (didLaunch && !reducedMotion) _cinematicTime = 0;
@@ -377,19 +426,19 @@ class PinballGame extends FlameGame {
     _shake = 0;
     leftPressed = false;
     rightPressed = false;
+    plunger.cancel();
     _prepareBall();
   }
 
   void _notifyHud() {
     if (_finished && hud.value.balls == 0) return;
-    final modeIndex =
-        _hits < 4
-            ? 0
-            : _hits < 10
-            ? 1
-            : _hits < 18
-            ? 2
-            : 3;
+    final modeIndex = _hits < 4
+        ? 0
+        : _hits < 10
+        ? 1
+        : _hits < 18
+        ? 2
+        : 3;
     hud.value = PinballHud(
       score: _score,
       balls: _ballsToPlay,
@@ -435,6 +484,41 @@ class PinballGame extends FlameGame {
 
     for (final ball in List<_Ball>.of(_balls)) {
       if (ball.inShooter) continue;
+      // A very soft shot can barely clear the divider and fall back into the
+      // tube. Recapture instead of draining a ball that never reached play.
+      if (!ball.inShooterLane &&
+          ball.velocity.dy > 0 &&
+          (ball.position.dx - _shooterLane.centerX).abs() < 8 &&
+          ball.position.dy >= _shooterLane.exitY &&
+          ball.position.dy < _shooterLane.readyY) {
+        ball.inShooterLane = true;
+        ball.velocity = Offset(0, ball.velocity.dy);
+      }
+      if (ball.inShooterLane) {
+        // The captive lane is a separate physical state: no random sideways
+        // impulse, generic rail collisions, scoring, portal or drain here.
+        final shot = _shooterLane.advance(
+          y: ball.position.dy,
+          velocityY: ball.velocity.dy,
+          dt: dt,
+        );
+        ball.position = Offset(_shooterLane.centerX, shot.y);
+        ball.velocity = Offset(0, shot.velocityY);
+        if (shot.phase == ShooterPhase.rearmed) {
+          ball.inShooter = true;
+          ball.inShooterLane = false;
+          ball.velocity = Offset.zero;
+          ball.trail.clear();
+          _notifyHud();
+        } else if (shot.phase == ShooterPhase.exited) {
+          // Starting NEXT physics tick, upper guide rails redirect the ball.
+          ball.inShooterLane = false;
+        } else {
+          ball.trail.add(ball.position);
+          if (ball.trail.length > 7) ball.trail.removeAt(0);
+        }
+        continue;
+      }
       ball.portalCooldown = math.max(0.0, ball.portalCooldown - dt);
       ball.velocity = Offset(
         ball.velocity.dx * 0.9994,
@@ -442,10 +526,19 @@ class PinballGame extends FlameGame {
       );
       final speed = ball.velocity.distance;
       if (speed > 1600) ball.velocity = ball.velocity * (1600 / speed);
+      var previousPosition = ball.position;
       ball.position += ball.velocity * dt;
 
       for (final rail in _rails) {
-        _collideSegment(ball, rail.a, rail.b, rail.bounce);
+        if (_collideSegment(
+          ball,
+          rail.a,
+          rail.b,
+          rail.bounce,
+          previousPosition: previousPosition,
+        )) {
+          previousPosition = ball.position;
+        }
       }
       _collideFlipper(ball, left: true);
       _collideFlipper(ball, left: false);
@@ -455,10 +548,9 @@ class PinballGame extends FlameGame {
         final delta = ball.position - bumper.center;
         final limit = bumper.radius + _ballRadius;
         if (delta.distance >= limit) continue;
-        final normal =
-            delta.distance < 0.001
-                ? const Offset(0, -1)
-                : delta / delta.distance;
+        final normal = delta.distance < 0.001
+            ? const Offset(0, -1)
+            : delta / delta.distance;
         ball.position = bumper.center + normal * limit;
         final dot = _dot(ball.velocity, normal);
         ball.velocity -= normal * (2.0 * math.min(0.0, dot));
@@ -697,13 +789,37 @@ class PinballGame extends FlameGame {
     Offset b,
     double bounce, {
     double width = 0,
+    Offset? previousPosition,
   }) {
+    if (previousPosition != null) {
+      final hit = sweepRail(
+        fromX: previousPosition.dx,
+        fromY: previousPosition.dy,
+        toX: ball.position.dx,
+        toY: ball.position.dy,
+        ax: a.dx,
+        ay: a.dy,
+        bx: b.dx,
+        by: b.dy,
+        radius: _ballRadius + width,
+      );
+      if (hit != null) {
+        final normal = Offset(hit.normalX, hit.normalY);
+        ball.position = Offset(
+          hit.x + hit.normalX * 0.02,
+          hit.y + hit.normalY * 0.02,
+        );
+        final incoming = _dot(ball.velocity, normal);
+        if (incoming < 0) ball.velocity -= normal * ((1 + bounce) * incoming);
+        _railImpactSound(ball.position, incoming);
+        return true;
+      }
+    }
     final v = b - a;
     final sq = _dot(v, v);
-    final projection =
-        sq < 0.001
-            ? 0.0
-            : (_dot(ball.position - a, v) / sq).clamp(0.0, 1.0).toDouble();
+    final projection = sq < 0.001
+        ? 0.0
+        : (_dot(ball.position - a, v) / sq).clamp(0.0, 1.0).toDouble();
     final closest = a + v * projection;
     final delta = ball.position - closest;
     final distance = delta.distance;
@@ -713,12 +829,15 @@ class PinballGame extends FlameGame {
     ball.position = closest + normal * minDistance;
     final incoming = _dot(ball.velocity, normal);
     if (incoming < 0) ball.velocity -= normal * ((1 + bounce) * incoming);
-    if (incoming < -260 && _time - _lastRailImpact > 0.10) {
-      _lastRailImpact = _time;
-      _pulse(closest, table.accent, size: 0.75);
-      audio?.play(PinballSound.rail);
-    }
+    _railImpactSound(closest, incoming);
     return true;
+  }
+
+  void _railImpactSound(Offset contact, double incoming) {
+    if (incoming >= -260 || _time - _lastRailImpact <= 0.10) return;
+    _lastRailImpact = _time;
+    _pulse(contact, table.accent, size: 0.75);
+    audio?.play(PinballSound.rail);
   }
 
   double _dot(Offset a, Offset b) => a.dx * b.dx + a.dy * b.dy;
@@ -738,10 +857,9 @@ class PinballGame extends FlameGame {
     // Cinematic plunger close-up -> short ball follow -> full-field reveal.
     // The shot never pauses physics or prevents two-finger flipper input.
     if (_cinematicTime >= 0 && !reducedMotion) {
-      final blend =
-          _cinematicTime < 0.35
-              ? 1.0
-              : (1 - (_cinematicTime - 0.35) / 1.0).clamp(0.0, 1.0).toDouble();
+      final blend = _cinematicTime < 0.35
+          ? 1.0
+          : (1 - (_cinematicTime - 0.35) / 1.0).clamp(0.0, 1.0).toDouble();
       zoom = 1 + 0.34 * blend * blend;
       if (_balls.isNotEmpty) {
         focus = Offset.lerp(focus, _balls.first.position, 0.82 * blend)!;
@@ -904,16 +1022,17 @@ class PinballGame extends FlameGame {
           ball.position,
           _ballRadius,
           Paint()
-            ..shader = const RadialGradient(
-              center: Alignment(-0.5, -0.6),
-              colors: <Color>[
-                Colors.white,
-                Color(0xFFA8C8E0),
-                Color(0xFF26344B),
-              ],
-            ).createShader(
-              Rect.fromCircle(center: ball.position, radius: _ballRadius),
-            ),
+            ..shader =
+                const RadialGradient(
+                  center: Alignment(-0.5, -0.6),
+                  colors: <Color>[
+                    Colors.white,
+                    Color(0xFFA8C8E0),
+                    Color(0xFF26344B),
+                  ],
+                ).createShader(
+                  Rect.fromCircle(center: ball.position, radius: _ballRadius),
+                ),
         );
         c.drawCircle(
           ball.position + const Offset(-2, -3),
