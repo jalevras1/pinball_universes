@@ -33,16 +33,28 @@ void main() {
         expect(gameOvers, 0);
       });
 
-      test('medium launch exits tube on centerline without steering', () {
+      test('medium launch exits tube on centerline and advances remaining time', () {
         game.launch(strength: 0.5);
         for (var i = 0; i < 250 && game.debugBallInTube; i++) {
           game.debugStepPhysics(1 / 120);
-          expect(game.debugBallPositions.single.dx, 352);
-          expect(game.debugBallVelocities.single.dx, 0);
+          // A step can *cross* the exit and immediately encounter the
+          // Moonfall angled upper guide. Require the locked centerline only
+          // for frames where the ball is still captive in the tube.
+          if (game.debugBallInTube) {
+            expect(game.debugBallPositions.single.dx, 352);
+            expect(game.debugBallVelocities.single.dx, 0);
+          }
         }
         expect(game.debugBallInTube, isFalse);
-        expect(game.debugBallPositions.single, const Offset(352, 198));
-        expect(game.debugBallVelocities.single.dx, 0);
+        // Straight-up launch is exact while captive. Once the ball crosses
+        // the exit, the first playfield guide may impart a tiny lateral
+        // impulse (Moonfall has a nearby angled guide).
+        expect(game.debugBallPositions.single.dx, closeTo(352, 0.25));
+        // Exit can happen partway through a physics step; playfield motion
+        // must continue for that frame's remaining duration.
+        expect(game.debugBallPositions.single.dy, lessThanOrEqualTo(198));
+        expect(game.debugBallPositions.single.dy, greaterThan(190));
+        expect(game.debugBallVelocities.single.dx, closeTo(0, 1));
         expect(game.debugBallVelocities.single.dy, lessThan(0));
         expect(game.hud.value.score, 0);
         expect(game.hud.value.balls, 3);
