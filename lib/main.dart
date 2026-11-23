@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'audio/pinball_audio.dart';
+import 'developer_console.dart';
+import 'game/developer_scenarios.dart';
 import 'game/pinball_game.dart';
 import 'game/table_data.dart';
 
@@ -588,6 +590,8 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
   final Map<int, bool> _pointers = <int, bool>{};
   int _peakScore = 0;
   bool _resultDialogShown = false;
+  bool _developerOpen = false;
+  int _developerPulseToken = 0;
   late bool _soundEnabled;
 
   @override
@@ -615,7 +619,7 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
   }
 
   void _onGameFinished(int score) {
-    _peakScore = math.max(_peakScore, score);
+    if (!_game.developerSession) _peakScore = math.max(_peakScore, score);
     if (_resultDialogShown) return;
     _resultDialogShown = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -625,8 +629,11 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
         barrierDismissible: false,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: const Color(0xFF111928),
-          title: const Text('GAME OVER'),
-          content: Text('Final score: ${_formatScore(score)}'),
+          title: Text(_game.developerSession ? 'DEV RUN COMPLETE' : 'GAME OVER'),
+          content: Text(
+            'Final score: ${_formatScore(score)}'
+            '${_game.developerSession ? ' (not saved)' : ''}',
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -672,8 +679,66 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
   }
 
   void _exitToTables() {
-    _peakScore = math.max(_peakScore, _game.hud.value.score);
+    if (!_game.developerSession) {
+      _peakScore = math.max(_peakScore, _game.hud.value.score);
+    }
     Navigator.of(context).pop(_peakScore);
+  }
+
+  void _toggleDeveloperConsole() {
+    _developerPulseToken++;
+    _pointers.clear();
+    _syncFlippers();
+    setState(() => _developerOpen = !_developerOpen);
+  }
+
+  void _runDeveloperScenario(PinballDeveloperScenario scenario) {
+    final pulseToken = ++_developerPulseToken;
+    _pointers.clear();
+    _syncFlippers();
+    if (!_game.runDeveloperScenario(scenario)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Playfield is still loading')),
+      );
+      return;
+    }
+    // Release the simulated press; players still test real two-thumb timing
+    // separately with the ordinary playfield touch zones.
+    if (scenario == PinballDeveloperScenario.leftFlipper ||
+        scenario == PinballDeveloperScenario.rightFlipper) {
+      Future<void>.delayed(const Duration(milliseconds: 180), () {
+        if (!mounted || pulseToken != _developerPulseToken) return;
+        _game.leftPressed = false;
+        _game.rightPressed = false;
+      });
+    }
+    setState(() {});
+  }
+
+  void _switchDeveloperTable(PinballTableId id) {
+    if (id == widget.table.id) return;
+    _pointers.clear();
+    _syncFlippers();
+    Navigator.of(context).pushReplacement<void, int>(
+      MaterialPageRoute<void>(
+        builder: (_) => PinballPlayScreen(
+          table: tableById(id),
+          reducedMotion: widget.reducedMotion,
+          soundEnabled: _soundEnabled,
+        ),
+      ),
+    );
+  }
+
+  void _stepDeveloperFrame() {
+    if (!_game.developerStepPausedPhysics()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pause the running table before stepping one frame.'),
+        ),
+      );
+    }
+    setState(() {});
   }
 
   @override
@@ -681,6 +746,7 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
     _game.pauseEngine();
     _game.releaseSprites();
     _game.hud.dispose();
+    _game.developerEvents.dispose();
     unawaited(_audio.dispose());
     super.dispose();
   }
@@ -756,6 +822,15 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
                           ),
                         ),
                         const SizedBox(width: 3),
+                        IconButton(
+                          onPressed: _toggleDeveloperConsole,
+                          icon: Icon(
+                            Icons.build_circle_outlined,
+                            color: _developerOpen ? widget.table.accent : null,
+                          ),
+                          tooltip: 'Developer test controls',
+                          visualDensity: VisualDensity.compact,
+                        ),
                         IconButton(
                           onPressed: _toggleAudio,
                           icon: Icon(
@@ -847,6 +922,30 @@ class _PinballPlayScreenState extends State<PinballPlayScreen> {
               ),
             ),
           ),
+          if (_developerOpen)
+            Positioned(
+              top: MediaQuery.paddingOf(context).top + 86,
+              left: 10,
+              right: 10,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: screen.height * 0.48),
+                child: PinballDeveloperConsole(
+                  accent: widget.table.accent,
+                  currentTable: widget.table.id,
+                  collisionOverlayVisible: _game.developerCollisionOverlay,
+                  scoreNotSaved: _game.developerSession,
+                  eventFeed: _game.developerEvents,
+                  onScenario: _runDeveloperScenario,
+                  onStepFrame: _stepDeveloperFrame,
+                  onClearEvents: _game.clearDeveloperEvents,
+                  onOverlayChanged: (visible) => setState(
+                    () => _game.developerCollisionOverlay = visible,
+                  ),
+                  onTableSelected: _switchDeveloperTable,
+                  onClose: _toggleDeveloperConsole,
+                ),
+              ),
+            ),
         ],
       ),
     );
