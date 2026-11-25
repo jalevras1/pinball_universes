@@ -1,0 +1,54 @@
+name: Pinball playable preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pinball-preview.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pinball-pages-preview
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/pinball-run23-physics-event-telemetry-20261123
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Resolve packages
+        run: flutter pub get
+      - name: Analyze (warnings and errors block preview)
+        run: flutter analyze --no-fatal-infos
+      - name: Test
+        run: flutter test
+      - name: Compile playable web preview
+        run: flutter build web --release --base-href /pinball_universes/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+          retention-days: 14
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish preview
+        id: deployment
+        uses: actions/deploy-pages@v4
