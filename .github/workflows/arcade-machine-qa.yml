@@ -1,0 +1,28 @@
+name: Arcade machine candidate QA
+on:
+  push:
+    branches: [feature/solid-state-machine-layout]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+      - run: flutter build web --release --base-href /pinball_universes/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arcade-machine-candidate-web
+          path: build/web
+          retention-days: 14
