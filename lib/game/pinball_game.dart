@@ -279,7 +279,7 @@ class PinballGame extends FlameGame {
     );
     final hazardAsset = switch (table.universe) {
       PinballUniverseId.celestial when table.variant == 0 =>
-        'assets/gameplay/portal_celestial.png',
+        'assets/gameplay/mechanical/capture_hole_violet.png',
       PinballUniverseId.neon when table.variant == 2 =>
         'assets/gameplay/reactor_neon.png',
       PinballUniverseId.clockwork when table.variant != 1 =>

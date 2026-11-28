@@ -43,6 +43,13 @@ void main() {
     expect(art.getUint32(16), 80); // PNG IHDR pixel width
     expect(art.getUint32(20), 80); // PNG IHDR pixel height
     expect(art.getUint32(0), 0x89504e47); // PNG signature
+    final vortex = await rootBundle.load(
+      'assets/gameplay/mechanical/capture_hole_violet.png',
+    );
+    expect(vortex.lengthInBytes, greaterThan(1500));
+    expect(vortex.getUint32(16), 80);
+    expect(vortex.getUint32(20), 80);
+    expect(vortex.getUint32(0), 0x89504e47);
   });
 
   test('the complete sound set is bundled', () async {
