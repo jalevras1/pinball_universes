@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/pinball-run23-physics-event-telemetry-20261123
+          ref: 5669d8b8e02ff351cab7f6df1e819bcaec2735ff
           persist-credentials: false
       - uses: subosito/flutter-action@v2
         with:
