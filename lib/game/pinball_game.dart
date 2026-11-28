@@ -230,6 +230,13 @@ class PinballGame extends FlameGame {
   ui.Image? _bumperSprite;
   // Batch 014: top-down artwork shares the existing circular bumper collider.
   ui.Image? _astralBumperSprite;
+  // Batch 019: sprites warped into the exact existing slingshot rail triangles.
+  ui.Image? _slingLeftIdle;
+  ui.Image? _slingLeftHit;
+  ui.Image? _slingRightIdle;
+  ui.Image? _slingRightHit;
+  double _slingLeftFlashUntil = -1;
+  double _slingRightFlashUntil = -1;
   ui.Image? _backplateSprite;
   ui.Image? _hazardSprite;
   bool _spritesReleased = false;
@@ -271,6 +278,18 @@ class PinballGame extends FlameGame {
       _astralBumperSprite = await _loadSprite(
         'assets/gameplay/mechanical/pop_bumper_blue_idle.png',
         128,
+      );
+      _slingLeftIdle = await _loadSprite(
+        'assets/gameplay/mechanical/slingshot_left_idle_aligned.png', 96,
+      );
+      _slingLeftHit = await _loadSprite(
+        'assets/gameplay/mechanical/slingshot_left_hit_aligned.png', 96,
+      );
+      _slingRightIdle = await _loadSprite(
+        'assets/gameplay/mechanical/slingshot_right_idle_aligned.png', 96,
+      );
+      _slingRightHit = await _loadSprite(
+        'assets/gameplay/mechanical/slingshot_right_hit_aligned.png', 96,
       );
     }
     _backplateSprite = await _loadSprite(
@@ -318,11 +337,19 @@ class PinballGame extends FlameGame {
     _ballSprite?.dispose();
     _bumperSprite?.dispose();
     _astralBumperSprite?.dispose();
+    _slingLeftIdle?.dispose();
+    _slingLeftHit?.dispose();
+    _slingRightIdle?.dispose();
+    _slingRightHit?.dispose();
     _backplateSprite?.dispose();
     _hazardSprite?.dispose();
     _ballSprite = null;
     _bumperSprite = null;
     _astralBumperSprite = null;
+    _slingLeftIdle = null;
+    _slingLeftHit = null;
+    _slingRightIdle = null;
+    _slingRightHit = null;
     _backplateSprite = null;
     _hazardSprite = null;
   }
@@ -536,6 +563,8 @@ class PinballGame extends FlameGame {
     _multiballAwarded = false;
     _impacts.clear();
     _bumperLastGlow.clear();
+    _slingLeftFlashUntil = -1;
+    _slingRightFlashUntil = -1;
     _cinematicTime = -1;
     _scoreBoostUntil = 0;
     _ballSaverUntil = 0;
@@ -685,6 +714,11 @@ class PinballGame extends FlameGame {
               final normal = delta/delta.distance;
               if (_dot(ball.velocity,normal) > 60) {
                 ball.lastBumperHit[-1000-ri] = _time;
+                if (rail.a.dx < _boardWidth / 2) {
+                  _slingLeftFlashUntil = _time + 0.16;
+                } else {
+                  _slingRightFlashUntil = _time + 0.16;
+                }
                 ball.velocity += normal*220;
                 _pulse(ball.position, table.secondary, size: 1.2);
                 audio?.play(PinballSound.rail);
@@ -1195,6 +1229,7 @@ class PinballGame extends FlameGame {
     );
 
     _drawMachineDeck(c);
+    _drawAlignedSlingshots(c);
     _drawTableDecor(c);
 
     for (final rail in _rails) {
@@ -1640,6 +1675,31 @@ class PinballGame extends FlameGame {
       c.drawRRect(lamp.deflate(2),Paint()..color=table.secondary.withValues(alpha:0.75));
     }
   }
+  void _drawAlignedSlingshots(Canvas c) {
+    if (!_arcadeLayout) return;
+    // Pre-aligned transparent PNGs occupy the original physical rail
+    // triangle envelopes, with unchanged flippers, colliders and bounce.
+    void drawSling(ui.Image? image, Rect destination) {
+      if (image == null) return; // Existing metal triangles stay as fallback.
+      c.drawImageRect(
+        image,
+        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+        destination,
+        Paint()..filterQuality = FilterQuality.high,
+      );
+    }
+    drawSling(
+      _time < _slingLeftFlashUntil ? _slingLeftHit ?? _slingLeftIdle
+          : _slingLeftIdle,
+      const Rect.fromLTWH(98, 508, 96, 112),
+    );
+    drawSling(
+      _time < _slingRightFlashUntil ? _slingRightHit ?? _slingRightIdle
+          : _slingRightIdle,
+      const Rect.fromLTWH(210, 508, 96, 112),
+    );
+  }
+
   void _drawPlunger(Canvas c) {
     c.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(342,660,362,713),const Radius.circular(4)),Paint()..color=const Color(0xFF1E2229));
     c.drawRect(const Rect.fromLTRB(349,664,355,712),Paint()..color=_hardwareMetal);
