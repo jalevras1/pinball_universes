@@ -9,6 +9,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import '../audio/pinball_audio.dart';
 import 'developer_scenarios.dart';
 import 'citadel_ball_lock.dart';
+import 'brass_switchyard.dart';
 import 'plunger_model.dart';
 import 'moonbridge_ramp.dart';
 import 'shooter_lane.dart';
@@ -54,6 +55,10 @@ class _Ball {
   // Raised Moonbridge travel is a distinct, collider-free flight state.
   double moonbridgeDistance = -1;
   double moonbridgeCooldown = 0;
+  // Independent elevated travel state for Brass Labyrinth's two tunnel routes.
+  int switchyardLane = -1;
+  double switchyardDistance = 0;
+  double switchyardCooldown = 0;
   final List<Offset> trail = <Offset>[];
   final Map<int, double> lastBumperHit = <int, double>{};
 }
@@ -145,6 +150,16 @@ class PinballGame extends FlameGame {
       _balls.any((ball) => ball.moonbridgeDistance >= 0);
 
   @visibleForTesting
+  bool get debugBallInSwitchyard =>
+      _balls.any((ball) => ball.switchyardLane >= 0);
+
+  @visibleForTesting
+  int get debugSwitchyardLastExitSide => _switchyardLastExitSide;
+
+  @visibleForTesting
+  bool get debugSwitchyardOpenLeft => BrassSwitchyard.leftOpen(_time);
+
+  @visibleForTesting
   int get debugCitadelLockedBalls => _citadelLockedBalls;
 
   @visibleForTesting
@@ -220,6 +235,14 @@ class PinballGame extends FlameGame {
         debugPlaceBall(const Offset(200, 445), const Offset(0, 550));
         leftPressed = false;
         rightPressed = false;
+      case PinballDeveloperScenario.brassLeftRoute:
+      case PinballDeveloperScenario.brassRightRoute:
+        if (table.id != PinballTableId.brassLabyrinth) return false;
+        final left = scenario == PinballDeveloperScenario.brassLeftRoute;
+        _advanceDeveloperSwitchyardPhase(left ? 0.6 : 3.8);
+        debugPlaceBall(Offset(left ? 176 : 226, 366), const Offset(0, 820));
+        leftPressed = false;
+        rightPressed = false;
       case PinballDeveloperScenario.drain:
         debugPlaceBall(const Offset(200, 750), const Offset(0, 400));
         leftPressed = false;
@@ -234,6 +257,13 @@ class PinballGame extends FlameGame {
     final cycle = (_time / CitadelBallLock.period).floor();
     var target = cycle * CitadelBallLock.period + phase;
     if (target <= _time) target += CitadelBallLock.period;
+    _time = target;
+  }
+
+  void _advanceDeveloperSwitchyardPhase(double phase) {
+    final cycle = (_time / BrassSwitchyard.cycleSeconds).floor();
+    var target = cycle * BrassSwitchyard.cycleSeconds + phase;
+    if (target <= _time) target += BrassSwitchyard.cycleSeconds;
     _time = target;
   }
 
@@ -280,6 +310,11 @@ class PinballGame extends FlameGame {
   final List<ui.Image?> _citadelLockSprites = List<ui.Image?>.filled(3, null);
   ui.Image? _citadelGateClosedSprite;
   ui.Image? _citadelGateOpenSprite;
+  ui.Image? _brassTrackSprite;
+  ui.Image? _brassLeftActiveSprite;
+  ui.Image? _brassRightActiveSprite;
+  ui.Image? _brassGateOpenSprite;
+  ui.Image? _brassGateClosedSprite;
   // Batch 019: sprites warped into the exact existing slingshot rail triangles.
   ui.Image? _slingLeftIdle;
   ui.Image? _slingLeftHit;
@@ -298,6 +333,7 @@ class PinballGame extends FlameGame {
   bool _multiballAwarded = false;
   int _citadelLockedBalls = 0;
   bool _citadelReleased = false;
+  int _switchyardLastExitSide = -1;
   int _score = 0;
   int _ballsToPlay = 3;
   int _hits = 0;
@@ -369,6 +405,23 @@ class PinballGame extends FlameGame {
         'assets/gameplay/mechanical/citadel_gate_open.png', 336,
       );
     }
+    if (table.id == PinballTableId.brassLabyrinth) {
+      _brassTrackSprite = await _loadSprite(
+        'assets/gameplay/mechanical/brass_switchyard_track.png', 600,
+      );
+      _brassLeftActiveSprite = await _loadSprite(
+        'assets/gameplay/mechanical/brass_switchyard_left_active.png', 600,
+      );
+      _brassRightActiveSprite = await _loadSprite(
+        'assets/gameplay/mechanical/brass_switchyard_right_active.png', 600,
+      );
+      _brassGateOpenSprite = await _loadSprite(
+        'assets/gameplay/mechanical/brass_switchyard_gate_open.png', 180,
+      );
+      _brassGateClosedSprite = await _loadSprite(
+        'assets/gameplay/mechanical/brass_switchyard_gate_closed.png', 180,
+      );
+    }
     _backplateSprite = await _loadSprite(
       'assets/backplates/${table.universe.name}.png',
       512,
@@ -420,6 +473,11 @@ class PinballGame extends FlameGame {
     for (final image in _citadelLockSprites) { image?.dispose(); }
     _citadelGateClosedSprite?.dispose();
     _citadelGateOpenSprite?.dispose();
+    _brassTrackSprite?.dispose();
+    _brassLeftActiveSprite?.dispose();
+    _brassRightActiveSprite?.dispose();
+    _brassGateOpenSprite?.dispose();
+    _brassGateClosedSprite?.dispose();
     _slingLeftIdle?.dispose();
     _slingLeftHit?.dispose();
     _slingRightIdle?.dispose();
@@ -437,6 +495,11 @@ class PinballGame extends FlameGame {
     }
     _citadelGateClosedSprite = null;
     _citadelGateOpenSprite = null;
+    _brassTrackSprite = null;
+    _brassLeftActiveSprite = null;
+    _brassRightActiveSprite = null;
+    _brassGateOpenSprite = null;
+    _brassGateClosedSprite = null;
     _slingLeftIdle = null;
     _slingLeftHit = null;
     _slingRightIdle = null;
@@ -654,6 +717,7 @@ class PinballGame extends FlameGame {
     _multiballAwarded = false;
     _citadelLockedBalls = 0;
     _citadelReleased = false;
+    _switchyardLastExitSide = -1;
     _impacts.clear();
     _bumperLastGlow.clear();
     _slingLeftFlashUntil = -1;
@@ -724,6 +788,35 @@ class PinballGame extends FlameGame {
 
     for (final ball in List<_Ball>.of(_balls)) {
       if (ball.inShooter) continue;
+      // A raised switchyard ball must never collide with rails/bumpers below.
+      // The actual 85-point artwork curves are the physics source of truth.
+      if (table.id == PinballTableId.brassLabyrinth &&
+          ball.switchyardLane >= 0) {
+        final side = ball.switchyardLane;
+        final travel = BrassSwitchyard.advance(
+          side, ball.switchyardDistance, dt,
+        );
+        ball.switchyardDistance = travel.distance;
+        ball.position = travel.position;
+        ball.velocity = Offset.zero;
+        if (travel.finished) {
+          ball.switchyardLane = -1;
+          ball.switchyardCooldown = BrassSwitchyard.cooldownSeconds;
+          ball.velocity = BrassSwitchyard.exitVelocity(side);
+          _switchyardLastExitSide = side;
+          _registerHit(BrassSwitchyard.exitPoints(side));
+          _announce(side == 0 ? 'LEFT TUNNEL +650' : 'RIGHT TUNNEL +850',
+              seconds: 1.8);
+          _pulse(ball.position, table.accent, size: 2.0);
+          _logDeveloperEvent('SWITCHYARD EXIT ${side == 0 ? "LEFT" : "RIGHT"}');
+          audio?.play(PinballSound.award);
+        }
+        ball.trail.add(ball.position);
+        if (ball.trail.length > 7) ball.trail.removeAt(0);
+        continue;
+      }
+      ball.switchyardCooldown =
+          math.max(0.0, ball.switchyardCooldown - dt);
       // An elevated ramp must not hit the physical rails and bumpers below it.
       // Use exactly the same centerline as the 2D artwork and return the ball
       // to the lower deck with a distinct exit impulse only after traversal.
@@ -895,6 +988,7 @@ class PinballGame extends FlameGame {
         }
       }
       if (_captureCitadelBall(ball)) continue;
+      if (_resolveBrassSwitchyard(ball, previousPosition)) continue;
       _specialBehavior(ball);
 
       final outlaneDrain = _arcadeLayout && ball.position.dy > 690 && (ball.position.dx < 75 || (ball.position.dx > 294 && ball.position.dx < 336));
@@ -984,6 +1078,48 @@ class PinballGame extends FlameGame {
     _notifyHud();
   }
 
+  bool _resolveBrassSwitchyard(_Ball ball, Offset previousPosition) {
+    if (table.id != PinballTableId.brassLabyrinth) return false;
+    // Match the physical sliding gate collision segment. The old moving
+    // placeholder barrier is removed from this table, not merely hidden.
+    final closedSide = BrassSwitchyard.leftOpen(_time) ? 1 : 0;
+    final gateHit = _collideSegment(
+      ball,
+      BrassSwitchyard.gateA(closedSide),
+      BrassSwitchyard.gateB(closedSide),
+      0.90,
+      width: 3,
+      previousPosition: previousPosition,
+    );
+    if (gateHit) {
+      if (_time - (ball.lastBumperHit[-4200] ?? -100) >= 0.20) {
+        ball.lastBumperHit[-4200] = _time;
+        _registerHit(BrassSwitchyard.closedGatePoints);
+        _pulse(ball.position, table.secondary, size: 1.25);
+        audio?.play(PinballSound.gate);
+        _logDeveloperEvent('SWITCHYARD CLOSED GATE +125');
+      }
+      return false;
+    }
+    final lane = BrassSwitchyard.detectEntry(
+      previous: previousPosition,
+      current: ball.position,
+      velocity: ball.velocity,
+      elapsed: _time,
+      cooldown: ball.switchyardCooldown,
+    );
+    if (lane == null) return false;
+    ball.switchyardLane = lane;
+    ball.switchyardDistance = 0;
+    ball.position = BrassSwitchyard.entrance(lane);
+    ball.velocity = Offset.zero;
+    ball.trail.clear();
+    _pulse(ball.position, table.accent, size: 1.4);
+    _logDeveloperEvent('SWITCHYARD ENTER ${lane == 0 ? "LEFT" : "RIGHT"}');
+    // No lower-deck trigger, drain or bumper contacts this frame.
+    return true;
+  }
+
   void _specialBehavior(_Ball ball) {
     switch (table.universe) {
       case PinballUniverseId.celestial:
@@ -1036,12 +1172,9 @@ class PinballGame extends FlameGame {
             }
           }
         } else {
+          // Brass Labyrinth now uses two real elevated passage gates.
+          // Keep the gear obstacle; remove the conflicting phantom barrier.
           final shift = 38 * math.sin(_time * 1.22);
-          _movingBarrier(
-            ball,
-            Offset(86 + shift, 375),
-            Offset(170 + shift, 375),
-          );
           _movingGear(ball, Offset(255 - shift * 0.6, 471));
         }
     }
@@ -1433,6 +1566,7 @@ class PinballGame extends FlameGame {
       }
     }
     _drawCitadelVaultHardware(c);
+    _drawBrassSwitchyardHardware(c);
     for (var i = 0; i < _bumpers.length; i++) {
       final bumper = _bumpers[i];
       final sinceHit = _time - (_bumperLastGlow[i] ?? -100);
@@ -1744,13 +1878,6 @@ class PinballGame extends FlameGame {
           }
         } else if (table.variant == 2) {
           final shift = 38 * math.sin(_time * 1.22);
-          _glowLine(
-            c,
-            Offset(86 + shift, 375),
-            Offset(170 + shift, 375),
-            table.secondary,
-            7,
-          );
           final center = Offset(255 - shift * 0.6, 471);
           if (_hazardSprite case final gear?) {
             _drawRotatingSprite(c, gear, center, 23, -_time * 1.4);
@@ -1758,6 +1885,40 @@ class PinballGame extends FlameGame {
             _drawRing(c, center, 21, table.accent, 3);
           }
         }
+    }
+  }
+
+  void _drawBrassSwitchyardHardware(Canvas c) {
+    if (table.id != PinballTableId.brassLabyrinth) return;
+    void drawSprite(ui.Image? sprite, Rect rect) {
+      if (sprite == null) return;
+      c.drawImageRect(
+        sprite,
+        Rect.fromLTWH(0, 0, sprite.width.toDouble(),
+            sprite.height.toDouble()),
+        rect,
+        Paint()..filterQuality = FilterQuality.high,
+      );
+    }
+    const boardRect = Rect.fromLTWH(0, 0, _boardWidth, _boardHeight);
+    drawSprite(_brassTrackSprite, boardRect);
+    final leftRaised = _balls.any((b) => b.switchyardLane == 0);
+    final rightRaised = _balls.any((b) => b.switchyardLane == 1);
+    if (BrassSwitchyard.leftOpen(_time) || leftRaised) {
+      drawSprite(_brassLeftActiveSprite, boardRect);
+    }
+    if (!BrassSwitchyard.leftOpen(_time) || rightRaised) {
+      drawSprite(_brassRightActiveSprite, boardRect);
+    }
+    for (final side in <int>[0, 1]) {
+      final open = side == BrassSwitchyard.openSide(_time);
+      final sprite = open ? _brassGateOpenSprite : _brassGateClosedSprite;
+      drawSprite(sprite, side == 0
+          ? BrassSwitchyard.leftGateArtwork : BrassSwitchyard.rightGateArtwork);
+      if (sprite == null && !open) {
+        _glowLine(c, BrassSwitchyard.gateA(side),
+            BrassSwitchyard.gateB(side), table.accent, 6);
+      }
     }
   }
 

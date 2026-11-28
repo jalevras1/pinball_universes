@@ -45,7 +45,9 @@ void main() {
       expect(find.text(scenario.label),
           scenario == PinballDeveloperScenario.moonbridgeRamp ||
                   scenario == PinballDeveloperScenario.citadelLock ||
-                  scenario == PinballDeveloperScenario.citadelRelease
+                  scenario == PinballDeveloperScenario.citadelRelease ||
+                  scenario == PinballDeveloperScenario.brassLeftRoute ||
+                  scenario == PinballDeveloperScenario.brassRightRoute
               ? findsNothing : findsOneWidget);
     }
     await tester.tap(find.text(PinballDeveloperScenario.weakLaunch.label));
@@ -141,6 +143,47 @@ void main() {
     await tester.ensureVisible(release);
     await tester.tap(release);
     expect(requested, PinballDeveloperScenario.citadelRelease);
+    events.dispose();
+  });
+
+  testWidgets('Brass Labyrinth exposes only its dual tunnel test buttons',
+      (tester) async {
+    PinballDeveloperScenario? requested;
+    final events = ValueNotifier<List<String>>(<String>[]);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 330, height: 440,
+          child: PinballDeveloperConsole(
+            accent: Colors.amber,
+            currentTable: PinballTableId.brassLabyrinth,
+            collisionOverlayVisible: false,
+            scoreNotSaved: false,
+            eventFeed: events,
+            onScenario: (scenario) => requested = scenario,
+            onStepFrame: () {},
+            onClearEvents: () {},
+            onOverlayChanged: (_) {},
+            onTableSelected: (_) {},
+            onClose: () {},
+          ),
+        ),
+      ),
+    ));
+    expect(find.text('MOONBRIDGE RAMP'), findsNothing);
+    expect(find.text('CITADEL CAPTURE'), findsNothing);
+    final left = find.text('BRASS LEFT TUNNEL');
+    final right = find.text('BRASS RIGHT TUNNEL');
+    expect(left, findsOneWidget);
+    expect(right, findsOneWidget);
+    await tester.ensureVisible(left);
+    await tester.pumpAndSettle();
+    await tester.tap(left);
+    expect(requested, PinballDeveloperScenario.brassLeftRoute);
+    await tester.ensureVisible(right);
+    await tester.pumpAndSettle();
+    await tester.tap(right);
+    expect(requested, PinballDeveloperScenario.brassRightRoute);
     events.dispose();
   });
 

@@ -97,7 +97,10 @@ class PinballDeveloperConsole extends StatelessWidget {
                           currentTable == PinballTableId.moonfallSanctuary) &&
                       ((scenario != PinballDeveloperScenario.citadelLock &&
                               scenario != PinballDeveloperScenario.citadelRelease) ||
-                          currentTable == PinballTableId.chronoCitadel))
+                          currentTable == PinballTableId.chronoCitadel) &&
+                      ((scenario != PinballDeveloperScenario.brassLeftRoute &&
+                              scenario != PinballDeveloperScenario.brassRightRoute) ||
+                          currentTable == PinballTableId.brassLabyrinth))
                     SizedBox(
                     width: 139,
                     child: OutlinedButton(

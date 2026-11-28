@@ -11,6 +11,8 @@ enum PinballDeveloperScenario {
   moonbridgeRamp('MOONBRIDGE RAMP'),
   citadelLock('CITADEL CAPTURE'),
   citadelRelease('CITADEL RELEASE'),
+  brassLeftRoute('BRASS LEFT TUNNEL'),
+  brassRightRoute('BRASS RIGHT TUNNEL'),
   drain('DRAIN / REARM'),
   resetRound('RESET ROUND');
 
