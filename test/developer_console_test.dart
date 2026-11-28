@@ -42,7 +42,9 @@ void main() {
     expect(find.byType(PinballDeveloperConsole), findsOneWidget);
     expect(find.text('DEVELOPER • LIVE TEST'), findsOneWidget);
     for (final scenario in PinballDeveloperScenario.values) {
-      expect(find.text(scenario.label), findsOneWidget);
+      expect(find.text(scenario.label),
+          scenario == PinballDeveloperScenario.moonbridgeRamp
+              ? findsNothing : findsOneWidget);
     }
     await tester.tap(find.text(PinballDeveloperScenario.weakLaunch.label));
     expect(requested, PinballDeveloperScenario.weakLaunch);
@@ -66,6 +68,39 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.close));
     expect(closed, isTrue);
+    events.dispose();
+  });
+
+  testWidgets('Moonfall developer panel exposes the active elevated ramp test',
+      (tester) async {
+    PinballDeveloperScenario? requested;
+    final events = ValueNotifier<List<String>>(<String>[]);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 330, height: 440,
+          child: PinballDeveloperConsole(
+            accent: Colors.cyan,
+            currentTable: PinballTableId.moonfallSanctuary,
+            collisionOverlayVisible: false,
+            scoreNotSaved: false,
+            eventFeed: events,
+            onScenario: (scenario) => requested = scenario,
+            onStepFrame: () {},
+            onClearEvents: () {},
+            onOverlayChanged: (_) {},
+            onTableSelected: (_) {},
+            onClose: () {},
+          ),
+        ),
+      ),
+    ));
+    final button = find.text('MOONBRIDGE RAMP');
+    expect(button, findsOneWidget);
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    expect(requested, PinballDeveloperScenario.moonbridgeRamp);
     events.dispose();
   });
 

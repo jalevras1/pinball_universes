@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:premium_pinball/game/moonbridge_ramp.dart';
+import 'package:premium_pinball/game/developer_scenarios.dart';
 import 'package:premium_pinball/game/pinball_game.dart';
 import 'package:premium_pinball/game/table_data.dart';
 
@@ -106,6 +107,28 @@ void main() {
     game.debugStepPhysics(1 / 120);
     expect(game.hud.value.score, MoonbridgeRamp.exitBonus);
     game.hud.dispose();
+  });
+
+  test('developer shortcut enters the real ramp and awards only on exit', () {
+    final game = PinballGame(
+      table: tableById(PinballTableId.moonfallSanctuary),
+      onGameFinished: (_) {},
+    );
+    game.debugInitializePhysics();
+    expect(game.runDeveloperScenario(PinballDeveloperScenario.moonbridgeRamp),
+        isTrue);
+    expect(game.hud.value.score, 0);
+    game.debugStepPhysics(1 / 120);
+    expect(game.debugBallInMoonbridge, isTrue);
+    expect(game.developerEvents.value.any((e) => e.contains('CAPTURE')), isTrue);
+    for (var i = 0; i < 160 && game.debugBallInMoonbridge; i++) {
+      game.debugStepPhysics(1 / 120);
+    }
+    expect(game.debugBallInMoonbridge, isFalse);
+    expect(game.hud.value.score, MoonbridgeRamp.exitBonus);
+    expect(game.developerEvents.value.any((e) => e.contains('RAMP')), isTrue);
+    game.hud.dispose();
+    game.developerEvents.dispose();
   });
 
   test('Downward ball is not sucked into the elevated ramp entrance', () {

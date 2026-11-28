@@ -191,6 +191,12 @@ class PinballGame extends FlameGame {
         );
         leftPressed = false;
         rightPressed = false;
+      case PinballDeveloperScenario.moonbridgeRamp:
+        if (table.id != PinballTableId.moonfallSanctuary) return false;
+        // Enter through the real ramp sensor on the following physics frame.
+        debugPlaceBall(const Offset(290, 529), const Offset(0, -480));
+        leftPressed = false;
+        rightPressed = false;
       case PinballDeveloperScenario.drain:
         debugPlaceBall(const Offset(200, 750), const Offset(0, 400));
         leftPressed = false;
