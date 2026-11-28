@@ -16,6 +16,8 @@ import 'table_data.dart';
 const double _boardWidth = 400;
 const double _boardHeight = 760;
 const double _ballRadius = 7.5;
+const double _flipperLength = 56;
+const double _flipperRadius = 7;
 const Offset _leftPivot = Offset(127, 664);
 const Offset _rightPivot = Offset(273, 664);
 
@@ -52,11 +54,13 @@ class _Ball {
 }
 
 class _Segment {
-  const _Segment(this.a, this.b);
+  const _Segment(this.a, this.b, {this.width = 1.5, this.kicker = false});
 
   final Offset a;
   final Offset b;
   final double bounce = 0.84;
+  final double width;
+  final bool kicker;
 }
 
 class _Bumper {
@@ -93,6 +97,7 @@ class PinballGame extends FlameGame {
       );
 
   final PinballTableInfo table;
+  bool get _arcadeLayout => table.id == PinballTableId.astralOrrery;
   final ValueChanged<int> onGameFinished;
   final PinballAudio? audio;
   final ValueNotifier<PinballHud> hud;
@@ -322,6 +327,24 @@ class PinballGame extends FlameGame {
       _Segment(Offset(369, 109), Offset(369, 695)),
       _Segment(Offset(336, 205), Offset(336, 695)),
       _Segment(Offset(369, 105), Offset(315, 145)),
+    ]);
+    if (_arcadeLayout) {
+      _rails.addAll(const <_Segment>[
+        _Segment(Offset(74, 480), Offset(74, 579), width: 3),
+        _Segment(Offset(74, 579), Offset(114, 654), width: 3),
+        _Segment(Offset(294, 480), Offset(294, 579), width: 3),
+        _Segment(Offset(294, 579), Offset(286, 654), width: 3),
+        _Segment(Offset(108, 518), Offset(158, 574), width: 4, kicker: true),
+        _Segment(Offset(158, 574), Offset(128, 604), width: 4),
+        _Segment(Offset(128, 604), Offset(108, 518), width: 4),
+        _Segment(Offset(258, 518), Offset(223, 574), width: 4, kicker: true),
+        _Segment(Offset(223, 574), Offset(252, 604), width: 4),
+        _Segment(Offset(252, 604), Offset(258, 518), width: 4),
+        _Segment(Offset(171, 78), Offset(171, 111), width: 3),
+        _Segment(Offset(229, 78), Offset(229, 111), width: 3),
+      ]);
+    } else {
+      _rails.addAll(const <_Segment>[
       _Segment(Offset(35, 559), Offset(105, 631)),
       _Segment(Offset(365, 559), Offset(295, 631)),
       _Segment(Offset(31, 689), Offset(88, 716)),
@@ -329,6 +352,7 @@ class PinballGame extends FlameGame {
       _Segment(Offset(76, 612), Offset(105, 652)),
       _Segment(Offset(324, 612), Offset(295, 652)),
     ]);
+    }
 
     switch (table.universe) {
       case PinballUniverseId.celestial:
@@ -621,15 +645,44 @@ class PinballGame extends FlameGame {
       if (speed > 1600) ball.velocity = ball.velocity * (1600 / speed);
       var previousPosition = ball.position;
       ball.position += ball.velocity * flightDt;
+      if (_arcadeLayout && (previousPosition.dy-95)*(ball.position.dy-95)<0) {
+        for(var lane=0;lane<3;lane++) {
+          final center=142.0+lane*58;
+          final key=-2000-lane;
+          if ((ball.position.dx-center).abs()<=10 && _time-(ball.lastBumperHit[key]??-100)>0.4) {
+            ball.lastBumperHit[key]=_time;
+            _pulse(Offset(center,95),table.accent);
+            _registerHit(150);
+          }
+        }
+      }
 
-      for (final rail in _rails) {
+      for (var ri = 0; ri < _rails.length; ri++) {
+        final rail = _rails[ri];
         if (_collideSegment(
           ball,
           rail.a,
           rail.b,
           rail.bounce,
+          width: rail.width,
           previousPosition: previousPosition,
         )) {
+          if (rail.kicker && _time - (ball.lastBumperHit[-1000-ri] ?? -100) > 0.18) {
+            final axis = rail.b - rail.a;
+            final u = (_dot(ball.position-rail.a, axis)/_dot(axis,axis)).clamp(0.0,1.0).toDouble();
+            final delta = ball.position - (rail.a + axis*u);
+            if (delta.distance > 0.001) {
+              final normal = delta/delta.distance;
+              if (_dot(ball.velocity,normal) > 60) {
+                ball.lastBumperHit[-1000-ri] = _time;
+                ball.velocity += normal*220;
+                _pulse(ball.position, table.secondary, size: 1.2);
+                audio?.play(PinballSound.rail);
+                _registerHit(100);
+                _logDeveloperEvent('SLINGSHOT +100');
+              }
+            }
+          }
           previousPosition = ball.position;
         }
       }
@@ -668,7 +721,8 @@ class PinballGame extends FlameGame {
       }
       _specialBehavior(ball);
 
-      if (ball.position.dy > 745 ||
+      final outlaneDrain = _arcadeLayout && ball.position.dy > 690 && (ball.position.dx < 75 || (ball.position.dx > 294 && ball.position.dx < 336));
+      if (outlaneDrain || ball.position.dy > 745 ||
           ball.position.dx < -50 ||
           ball.position.dx > 450) {
         _logDeveloperEvent(
@@ -868,9 +922,8 @@ class PinballGame extends FlameGame {
   void _collideFlipper(_Ball ball, {required bool left}) {
     final a = left ? _leftPivot : _rightPivot;
     final lift = left ? _leftLift : _rightLift;
-    final radians = left ? -0.19 - lift * 0.67 : math.pi + 0.19 + lift * 0.67;
-    final b = a + Offset(math.cos(radians) * 78, math.sin(radians) * 78);
-    if (!_collideSegment(ball, a, b, 0.78, width: 11)) return;
+    final b = _flipperTip(a,left,lift);
+    if (!_collideSegment(ball, a, b, 0.78, width: _flipperRadius)) return;
     final pressed = left ? leftPressed : rightPressed;
     if (pressed && ball.position.dy < a.dy + 18) {
       ball.velocity = Offset(
@@ -1001,6 +1054,7 @@ class PinballGame extends FlameGame {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4;
     for (final rail in _rails) {
+      envelope.strokeWidth = (_ballRadius+rail.width)*2;
       c.drawLine(rail.a, rail.b, envelope);
       c.drawLine(rail.a, rail.b, outline);
     }
@@ -1018,14 +1072,13 @@ class PinballGame extends FlameGame {
     for (final left in <bool>[true, false]) {
       final pivot = left ? _leftPivot : _rightPivot;
       final lift = left ? _leftLift : _rightLift;
-      final angle = left ? -0.19 - lift * 0.67 : math.pi + 0.19 + lift * 0.67;
-      final tip = pivot + Offset(math.cos(angle) * 78, math.sin(angle) * 78);
+      final tip = _flipperTip(pivot,left,lift);
       c.drawLine(
         pivot,
         tip,
         Paint()
           ..color = const Color(0x55FFD378)
-          ..strokeWidth = 2 * (_ballRadius + 11)
+          ..strokeWidth = 2 * (_ballRadius + _flipperRadius)
           ..strokeCap = StrokeCap.round,
       );
       c.drawLine(
@@ -1131,17 +1184,18 @@ class PinballGame extends FlameGame {
         ..color = Colors.white.withValues(alpha: 0.55),
     );
 
+    _drawMachineDeck(c);
     _drawTableDecor(c);
 
     for (final rail in _rails) {
-      _glowLine(c, rail.a, rail.b, table.accent, 2.5);
+      _drawMachineRail(c,rail);
     }
     for (var i = 0; i < _bumpers.length; i++) {
       final bumper = _bumpers[i];
       final sprite = _bumperSprite;
+      _drawBumperHousing(c,bumper);
       if (sprite != null) {
-        _drawCenteredSprite(c, sprite, bumper.center, bumper.radius * 1.35);
-        _drawRing(c, bumper.center, bumper.radius + 3, table.secondary, 1.5);
+        _drawCenteredSprite(c, sprite, bumper.center, bumper.radius * 0.86);
       } else {
         _glowCircle(c, bumper.center, bumper.radius, table.secondary);
         _glowCircle(c, bumper.center, bumper.radius * 0.48, table.accent);
@@ -1165,13 +1219,7 @@ class PinballGame extends FlameGame {
     _drawFlipper(c, _rightPivot, false, _rightLift);
 
     // Right-side shooter lane and plunger, kept separate from the HUD.
-    _glowLine(
-      c,
-      const Offset(351, 697),
-      const Offset(351, 714),
-      table.secondary,
-      6,
-    );
+    _drawPlunger(c);
 
     for (final ball in _balls) {
       for (var i = 0; i < ball.trail.length; i++) {
@@ -1189,7 +1237,7 @@ class PinballGame extends FlameGame {
       );
       final sprite = _ballSprite;
       if (sprite != null) {
-        _drawCenteredSprite(c, sprite, ball.position, _ballRadius * 1.35);
+        _drawCenteredSprite(c, sprite, ball.position, _ballRadius);
       } else {
         c.drawCircle(
           ball.position,
@@ -1306,7 +1354,7 @@ class PinballGame extends FlameGame {
         }
         _drawRing(c, const Offset(200, 163), 49, table.accent, 1.4);
         _drawRing(c, const Offset(200, 163), 38, table.secondary, 2);
-        _drawRing(c, const Offset(200, 531), 52, table.accent, 1);
+        if (!_arcadeLayout) _drawRing(c, const Offset(200, 531), 52, table.accent, 1);
         for (var i = 0; i < 8; i++) {
           final angle = i * math.pi / 4 + _time * 0.17;
           final a =
@@ -1530,18 +1578,68 @@ class PinballGame extends FlameGame {
     );
   }
 
-  void _drawFlipper(Canvas c, Offset pivot, bool left, double lift) {
-    final angle = left ? -0.19 - lift * 0.67 : math.pi + 0.19 + lift * 0.67;
-    final tip = pivot + Offset(math.cos(angle) * 78, math.sin(angle) * 78);
-    _glowLine(c, pivot, tip, table.secondary, 18);
-    c.drawLine(
-      pivot,
-      tip,
-      Paint()
-        ..strokeCap = StrokeCap.round
-        ..strokeWidth = 10
-        ..color = const Color(0xFFF7F3E8),
-    );
-    _glowCircle(c, pivot, 7, table.accent);
+  Offset _flipperTip(Offset pivot, bool left, double lift) {
+    final angle=left ? 0.20-lift*0.94 : math.pi-0.20+lift*0.94;
+    return pivot+Offset(math.cos(angle),math.sin(angle))*_flipperLength;
+  }
+  Color get _hardwareMetal => switch(table.universe) {
+    PinballUniverseId.celestial => const Color(0xFFC8A56B),
+    PinballUniverseId.neon => const Color(0xFFAAC2CC),
+    PinballUniverseId.clockwork => const Color(0xFFC78E49),
+  };
+  void _drawMachineRail(Canvas c,_Segment rail) {
+    final a=rail.a,b=rail.b,w=rail.width*2;
+    c.drawLine(a+const Offset(2,3),b+const Offset(2,3),Paint()..strokeCap=StrokeCap.round..strokeWidth=w+4..color=const Color(0xA9000000));
+    c.drawLine(a,b,Paint()..strokeCap=StrokeCap.round..strokeWidth=w..color=rail.kicker?const Color(0xFF34333D):_hardwareMetal);
+    c.drawLine(a-const Offset(0.7,0.7),b-const Offset(0.7,0.7),Paint()..strokeCap=StrokeCap.round..strokeWidth=math.max(1.0,w*0.24)..color=rail.kicker?table.secondary:const Color(0xFFF8E8CE));
+  }
+  void _drawBumperHousing(Canvas c,_Bumper bumper) {
+    final p=bumper.center,r=bumper.radius;
+    c.drawCircle(p+const Offset(2,4),r+2,Paint()..color=const Color(0xA9000000));
+    c.drawCircle(p,r,Paint()..color=const Color(0xFF20252D));
+    c.drawCircle(p,r-2,Paint()..shader=RadialGradient(center:const Alignment(-0.4,-0.5),colors:[const Color(0xFFF9EBD2),_hardwareMetal,const Color(0xFF584736)],stops:const [0.1,0.65,1]).createShader(Rect.fromCircle(center:p,radius:r)));
+  }
+  void _drawMachineDeck(Canvas c) {
+    final trough=RRect.fromRectAndRadius(const Rect.fromLTRB(337.5,205,367.5,695),const Radius.circular(4));
+    c.drawRRect(trough,Paint()..shader=const LinearGradient(colors:[Color(0xFF11151E),Color(0xFF4A4C50),Color(0xFF141922)],stops:[0,0.48,1]).createShader(trough.outerRect));
+    c.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(100,700,300,740),const Radius.circular(5)),Paint()..color=const Color(0xDD111419));
+    c.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(179,687,221,747),const Radius.circular(6)),Paint()..color=const Color(0xFF030407));
+    if (!_arcadeLayout) return;
+    for(final points in <List<Offset>>[
+      const [Offset(108,518),Offset(158,574),Offset(128,604)],
+      const [Offset(258,518),Offset(223,574),Offset(252,604)],
+    ]) {
+      final path=Path()..addPolygon(points,true);
+      c.drawPath(path.shift(const Offset(2,4)),Paint()..color=const Color(0xBB000000));
+      c.drawPath(path,Paint()..shader=LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[table.base,_hardwareMetal,const Color(0xFF23232C)]).createShader(path.getBounds()));
+      for(final p in points) {
+        c.drawCircle(p,3,Paint()..color=const Color(0xFF201D25));
+        c.drawCircle(p,1.6,Paint()..color=const Color(0xFFF6E8D1));
+      }
+    }
+    for(final x in [142.0,200.0,258.0]) {
+      final lamp=RRect.fromRectAndRadius(Rect.fromCenter(center:Offset(x,95),width:20,height:9),const Radius.circular(4));
+      c.drawRRect(lamp,Paint()..color=const Color(0xFF171C29));
+      c.drawRRect(lamp.deflate(2),Paint()..color=table.secondary.withValues(alpha:0.75));
+    }
+  }
+  void _drawPlunger(Canvas c) {
+    c.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(342,660,362,713),const Radius.circular(4)),Paint()..color=const Color(0xFF1E2229));
+    c.drawRect(const Rect.fromLTRB(349,664,355,712),Paint()..color=_hardwareMetal);
+    for(var i=0;i<7;i++) {
+      final y=668.0+i*5;
+      c.drawLine(Offset(344,y),Offset(360,y+3),Paint()..strokeWidth=2..color=const Color(0xFFD7D8D8));
+    }
+    c.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(342,707,362,719),const Radius.circular(4)),Paint()..color=_hardwareMetal);
+  }
+  void _drawFlipper(Canvas c,Offset pivot,bool left,double lift) {
+    final tip=_flipperTip(pivot,left,lift);
+    c.drawLine(pivot+const Offset(2,4),tip+const Offset(2,4),Paint()..strokeCap=StrokeCap.round..strokeWidth=18..color=const Color(0xB9000000));
+    c.drawLine(pivot,tip,Paint()..strokeCap=StrokeCap.round..strokeWidth=_flipperRadius*2..color=const Color(0xFF24232B));
+    c.drawLine(pivot,tip,Paint()..strokeCap=StrokeCap.round..strokeWidth=10..color=_hardwareMetal);
+    c.drawLine(pivot-const Offset(0,1),tip-const Offset(0,1),Paint()..strokeCap=StrokeCap.round..strokeWidth=3..color=const Color(0xFFF9EBD2));
+    c.drawCircle(pivot,4.5,Paint()..color=const Color(0xFF363B44));
+    c.drawCircle(pivot,2.5,Paint()..color=const Color(0xFFEDE9E3));
   }
 }
+
