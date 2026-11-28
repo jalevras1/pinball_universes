@@ -228,6 +228,8 @@ class PinballGame extends FlameGame {
   final Map<int, double> _bumperLastGlow = <int, double>{};
   ui.Image? _ballSprite;
   ui.Image? _bumperSprite;
+  // Batch 014: top-down artwork shares the existing circular bumper collider.
+  ui.Image? _astralBumperSprite;
   ui.Image? _backplateSprite;
   ui.Image? _hazardSprite;
   bool _spritesReleased = false;
@@ -265,6 +267,12 @@ class PinballGame extends FlameGame {
       'assets/gameplay/bumper_${table.universe.name}.png',
       192,
     );
+    if (_arcadeLayout) {
+      _astralBumperSprite = await _loadSprite(
+        'assets/gameplay/mechanical/pop_bumper_blue_idle.png',
+        128,
+      );
+    }
     _backplateSprite = await _loadSprite(
       'assets/backplates/${table.universe.name}.png',
       512,
@@ -309,10 +317,12 @@ class PinballGame extends FlameGame {
     _spritesReleased = true;
     _ballSprite?.dispose();
     _bumperSprite?.dispose();
+    _astralBumperSprite?.dispose();
     _backplateSprite?.dispose();
     _hazardSprite?.dispose();
     _ballSprite = null;
     _bumperSprite = null;
+    _astralBumperSprite = null;
     _backplateSprite = null;
     _hazardSprite = null;
   }
@@ -1192,10 +1202,17 @@ class PinballGame extends FlameGame {
     }
     for (var i = 0; i < _bumpers.length; i++) {
       final bumper = _bumpers[i];
-      final sprite = _bumperSprite;
+      final sprite = _astralBumperSprite ?? _bumperSprite;
       _drawBumperHousing(c,bumper);
       if (sprite != null) {
-        _drawCenteredSprite(c, sprite, bumper.center, bumper.radius * 0.86);
+        // The 014 master has transparent padding, so its metal rim fills the
+        // same radius as the real circle collider. Do not move the collider.
+        _drawCenteredSprite(
+          c,
+          sprite,
+          bumper.center,
+          bumper.radius * (_astralBumperSprite != null ? 1.10 : 0.86),
+        );
       } else {
         _glowCircle(c, bumper.center, bumper.radius, table.secondary);
         _glowCircle(c, bumper.center, bumper.radius * 0.48, table.accent);

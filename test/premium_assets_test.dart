@@ -35,6 +35,16 @@ void main() {
     }
   });
 
+  test('Astral Orrery premium bumper is bundled and correctly sized', () async {
+    final art = await rootBundle.load(
+      'assets/gameplay/mechanical/pop_bumper_blue_idle.png',
+    );
+    expect(art.lengthInBytes, greaterThan(1500));
+    expect(art.getUint32(16), 80); // PNG IHDR pixel width
+    expect(art.getUint32(20), 80); // PNG IHDR pixel height
+    expect(art.getUint32(0), 0x89504e47); // PNG signature
+  });
+
   test('the complete sound set is bundled', () async {
     for (final name in <String>[
       'launch',
