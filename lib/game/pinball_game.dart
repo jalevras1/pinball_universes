@@ -9,6 +9,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import '../audio/pinball_audio.dart';
 import 'developer_scenarios.dart';
 import 'plunger_model.dart';
+import 'moonbridge_ramp.dart';
 import 'shooter_lane.dart';
 import 'swept_rail.dart';
 import 'table_data.dart';
@@ -49,6 +50,9 @@ class _Ball {
   bool inShooter = false;
   bool inShooterLane = false;
   double portalCooldown = 0;
+  // Raised Moonbridge travel is a distinct, collider-free flight state.
+  double moonbridgeDistance = -1;
+  double moonbridgeCooldown = 0;
   final List<Offset> trail = <Offset>[];
   final Map<int, double> lastBumperHit = <int, double>{};
 }
@@ -134,6 +138,10 @@ class PinballGame extends FlameGame {
 
   @visibleForTesting
   bool get debugBallInTube => _balls.any((ball) => ball.inShooterLane);
+
+  @visibleForTesting
+  bool get debugBallInMoonbridge =>
+      _balls.any((ball) => ball.moonbridgeDistance >= 0);
 
   @visibleForTesting
   void debugPlaceBall(Offset position, Offset velocity) {
@@ -231,6 +239,8 @@ class PinballGame extends FlameGame {
   // Batch 014: top-down artwork shares the existing circular bumper collider.
   ui.Image? _astralBumperSprite;
   ui.Image? _astralBumperHitSprite;
+  ui.Image? _moonbridgeIdleSprite;
+  ui.Image? _moonbridgeActiveSprite;
   // Batch 019: sprites warped into the exact existing slingshot rail triangles.
   ui.Image? _slingLeftIdle;
   ui.Image? _slingLeftHit;
@@ -297,6 +307,14 @@ class PinballGame extends FlameGame {
         'assets/gameplay/mechanical/slingshot_right_hit_aligned.png', 96,
       );
     }
+    if (table.id == PinballTableId.moonfallSanctuary) {
+      _moonbridgeIdleSprite = await _loadSprite(
+        'assets/gameplay/mechanical/moonbridge_ramp_idle.png', 600,
+      );
+      _moonbridgeActiveSprite = await _loadSprite(
+        'assets/gameplay/mechanical/moonbridge_ramp_active.png', 600,
+      );
+    }
     _backplateSprite = await _loadSprite(
       'assets/backplates/${table.universe.name}.png',
       512,
@@ -343,6 +361,8 @@ class PinballGame extends FlameGame {
     _bumperSprite?.dispose();
     _astralBumperSprite?.dispose();
     _astralBumperHitSprite?.dispose();
+    _moonbridgeIdleSprite?.dispose();
+    _moonbridgeActiveSprite?.dispose();
     _slingLeftIdle?.dispose();
     _slingLeftHit?.dispose();
     _slingRightIdle?.dispose();
@@ -353,6 +373,8 @@ class PinballGame extends FlameGame {
     _bumperSprite = null;
     _astralBumperSprite = null;
     _astralBumperHitSprite = null;
+    _moonbridgeIdleSprite = null;
+    _moonbridgeActiveSprite = null;
     _slingLeftIdle = null;
     _slingLeftHit = null;
     _slingRightIdle = null;
@@ -638,6 +660,31 @@ class PinballGame extends FlameGame {
 
     for (final ball in List<_Ball>.of(_balls)) {
       if (ball.inShooter) continue;
+      // An elevated ramp must not hit the physical rails and bumpers below it.
+      // Use exactly the same centerline as the 2D artwork and return the ball
+      // to the lower deck with a distinct exit impulse only after traversal.
+      if (table.id == PinballTableId.moonfallSanctuary &&
+          ball.moonbridgeDistance >= 0) {
+        final step = MoonbridgeRamp.advance(ball.moonbridgeDistance, dt);
+        ball.moonbridgeDistance = step.distance;
+        ball.position = step.position;
+        ball.velocity = Offset.zero;
+        if (step.finished) {
+          ball.moonbridgeDistance = -1;
+          ball.moonbridgeCooldown = MoonbridgeRamp.cooldownSeconds;
+          ball.velocity = MoonbridgeRamp.exitVelocity;
+          _registerHit(MoonbridgeRamp.exitBonus);
+          _announce('MOONBRIDGE +700', seconds: 1.5);
+          _pulse(MoonbridgeRamp.exit, table.accent, size: 1.8);
+          _logDeveloperEvent('MOONBRIDGE EXIT +700');
+          audio?.play(PinballSound.award);
+        }
+        ball.trail.add(ball.position);
+        if (ball.trail.length > 7) ball.trail.removeAt(0);
+        continue;
+      }
+      ball.moonbridgeCooldown =
+          math.max(0.0, ball.moonbridgeCooldown - dt);
       var flightDt = dt;
       // A very soft shot can barely clear the divider and fall back into the
       // tube. Recapture instead of draining a ball that never reached play.
@@ -691,6 +738,19 @@ class PinballGame extends FlameGame {
       if (speed > 1600) ball.velocity = ball.velocity * (1600 / speed);
       var previousPosition = ball.position;
       ball.position += ball.velocity * flightDt;
+      if (table.id == PinballTableId.moonfallSanctuary &&
+          MoonbridgeRamp.canEnter(
+            ball.position, ball.velocity, cooldown: ball.moonbridgeCooldown,
+          )) {
+        ball.position = MoonbridgeRamp.entrance;
+        ball.velocity = Offset.zero;
+        ball.moonbridgeDistance = 0;
+        ball.trail.clear();
+        _pulse(MoonbridgeRamp.entrance, table.secondary, size: 1.4);
+        _logDeveloperEvent('MOONBRIDGE CAPTURE');
+        // No under-track or lower-deck contacts on this fixed step.
+        continue;
+      }
       if (_arcadeLayout && (previousPosition.dy-95)*(ball.position.dy-95)<0) {
         for(var lane=0;lane<3;lane++) {
           final center=142.0+lane*58;
@@ -1241,6 +1301,19 @@ class PinballGame extends FlameGame {
 
     for (final rail in _rails) {
       _drawMachineRail(c,rail);
+    }
+    if (table.id == PinballTableId.moonfallSanctuary) {
+      final rampImage = (debugBallInMoonbridge
+              ? _moonbridgeActiveSprite : null) ?? _moonbridgeIdleSprite;
+      if (rampImage != null) {
+        c.drawImageRect(
+          rampImage,
+          Rect.fromLTWH(0, 0, rampImage.width.toDouble(),
+              rampImage.height.toDouble()),
+          const Rect.fromLTWH(0, 0, _boardWidth, _boardHeight),
+          Paint()..filterQuality = FilterQuality.high,
+        );
+      }
     }
     for (var i = 0; i < _bumpers.length; i++) {
       final bumper = _bumpers[i];
