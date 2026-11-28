@@ -1,0 +1,3 @@
+# Batch 020 — reactive blue pop-bumper impact art
+
+Adds the 80x80 transparent PNG from persistent Library Batch 017/020 as `assets/gameplay/mechanical/pop_bumper_blue_hit.png`. Only the Astral Orrery table uses this sprite: during the first 0.15 seconds after the existing real bumper collision event, `PinballGame` chooses the bright impact sprite, then returns to the idle one. The pre-existing 0.30 second outward ring remains and is not replaced. No physics, score, collider, sound or ball-trajectory changes. Bundling is checked with Flutter tests. New images and original source remain saved in the persistent Library. Real Android phone QA remains pending.

@@ -230,6 +230,7 @@ class PinballGame extends FlameGame {
   ui.Image? _bumperSprite;
   // Batch 014: top-down artwork shares the existing circular bumper collider.
   ui.Image? _astralBumperSprite;
+  ui.Image? _astralBumperHitSprite;
   // Batch 019: sprites warped into the exact existing slingshot rail triangles.
   ui.Image? _slingLeftIdle;
   ui.Image? _slingLeftHit;
@@ -277,6 +278,10 @@ class PinballGame extends FlameGame {
     if (_arcadeLayout) {
       _astralBumperSprite = await _loadSprite(
         'assets/gameplay/mechanical/pop_bumper_blue_idle.png',
+        128,
+      );
+      _astralBumperHitSprite = await _loadSprite(
+        'assets/gameplay/mechanical/pop_bumper_blue_hit.png',
         128,
       );
       _slingLeftIdle = await _loadSprite(
@@ -337,6 +342,7 @@ class PinballGame extends FlameGame {
     _ballSprite?.dispose();
     _bumperSprite?.dispose();
     _astralBumperSprite?.dispose();
+    _astralBumperHitSprite?.dispose();
     _slingLeftIdle?.dispose();
     _slingLeftHit?.dispose();
     _slingRightIdle?.dispose();
@@ -346,6 +352,7 @@ class PinballGame extends FlameGame {
     _ballSprite = null;
     _bumperSprite = null;
     _astralBumperSprite = null;
+    _astralBumperHitSprite = null;
     _slingLeftIdle = null;
     _slingLeftHit = null;
     _slingRightIdle = null;
@@ -1237,7 +1244,12 @@ class PinballGame extends FlameGame {
     }
     for (var i = 0; i < _bumpers.length; i++) {
       final bumper = _bumpers[i];
-      final sprite = _astralBumperSprite ?? _bumperSprite;
+      final sinceHit = _time - (_bumperLastGlow[i] ?? -100);
+      // A real solver contact triggers the bright impact state; the
+      // three existing bumper colliders remain the source of truth.
+      final sprite = (_arcadeLayout && sinceHit < 0.15
+              ? _astralBumperHitSprite : null) ??
+          _astralBumperSprite ?? _bumperSprite;
       _drawBumperHousing(c,bumper);
       if (sprite != null) {
         // The 014 master has transparent padding, so its metal rim fills the
@@ -1252,7 +1264,6 @@ class PinballGame extends FlameGame {
         _glowCircle(c, bumper.center, bumper.radius, table.secondary);
         _glowCircle(c, bumper.center, bumper.radius * 0.48, table.accent);
       }
-      final sinceHit = _time - (_bumperLastGlow[i] ?? -100);
       if (sinceHit < 0.30) {
         final strength = (1 - sinceHit / 0.30).clamp(0.0, 1.0).toDouble();
         _drawRing(

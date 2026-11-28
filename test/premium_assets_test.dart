@@ -50,6 +50,15 @@ void main() {
     expect(vortex.getUint32(16), 80);
     expect(vortex.getUint32(20), 80);
     expect(vortex.getUint32(0), 0x89504e47);
+    // The premium impact art is separate and retains the exact bumper size.
+    final hit = await rootBundle.load(
+      'assets/gameplay/mechanical/pop_bumper_blue_hit.png',
+    );
+    expect(hit.lengthInBytes, greaterThan(1500));
+    expect(hit.getUint32(0), 0x89504e47);
+    expect(hit.getUint32(16), 80);
+    expect(hit.getUint32(20), 80);
+    expect(hit.lengthInBytes, isNot(art.lengthInBytes));
   });
 
   test('the complete sound set is bundled', () async {
