@@ -8,6 +8,7 @@ import 'package:flutter/services.dart' show rootBundle;
 
 import '../audio/pinball_audio.dart';
 import 'developer_scenarios.dart';
+import 'citadel_ball_lock.dart';
 import 'plunger_model.dart';
 import 'moonbridge_ramp.dart';
 import 'shooter_lane.dart';
@@ -144,6 +145,13 @@ class PinballGame extends FlameGame {
       _balls.any((ball) => ball.moonbridgeDistance >= 0);
 
   @visibleForTesting
+  int get debugCitadelLockedBalls => _citadelLockedBalls;
+
+  @visibleForTesting
+  bool get debugCitadelReleased => _citadelReleased;
+
+
+  @visibleForTesting
   void debugPlaceBall(Offset position, Offset velocity) {
     _balls
       ..clear()
@@ -197,6 +205,21 @@ class PinballGame extends FlameGame {
         debugPlaceBall(const Offset(290, 529), const Offset(0, -480));
         leftPressed = false;
         rightPressed = false;
+      case PinballDeveloperScenario.citadelLock:
+        if (table.id != PinballTableId.chronoCitadel) return false;
+        // Advance into the next naturally OPEN gate phase. The ball must
+        // physically enter the vault; the button never gives free points.
+        _advanceDeveloperGatePhase(3.0);
+        debugPlaceBall(const Offset(198, 496), const Offset(0, 330));
+        leftPressed = false;
+        rightPressed = false;
+      case PinballDeveloperScenario.citadelRelease:
+        if (table.id != PinballTableId.chronoCitadel) return false;
+        // Aim a moving test ball at the real CLOSED gate collision segment.
+        _advanceDeveloperGatePhase(0.1);
+        debugPlaceBall(const Offset(200, 445), const Offset(0, 550));
+        leftPressed = false;
+        rightPressed = false;
       case PinballDeveloperScenario.drain:
         debugPlaceBall(const Offset(200, 750), const Offset(0, 400));
         leftPressed = false;
@@ -205,6 +228,13 @@ class PinballGame extends FlameGame {
         restart();
     }
     return true;
+  }
+
+  void _advanceDeveloperGatePhase(double phase) {
+    final cycle = (_time / CitadelBallLock.period).floor();
+    var target = cycle * CitadelBallLock.period + phase;
+    if (target <= _time) target += CitadelBallLock.period;
+    _time = target;
   }
 
   /// Move exactly one fixed physics frame while PAUSED. The running game,
@@ -247,6 +277,9 @@ class PinballGame extends FlameGame {
   ui.Image? _astralBumperHitSprite;
   ui.Image? _moonbridgeIdleSprite;
   ui.Image? _moonbridgeActiveSprite;
+  final List<ui.Image?> _citadelLockSprites = List<ui.Image?>.filled(3, null);
+  ui.Image? _citadelGateClosedSprite;
+  ui.Image? _citadelGateOpenSprite;
   // Batch 019: sprites warped into the exact existing slingshot rail triangles.
   ui.Image? _slingLeftIdle;
   ui.Image? _slingLeftHit;
@@ -263,6 +296,8 @@ class PinballGame extends FlameGame {
   bool _paused = false;
   bool _finished = false;
   bool _multiballAwarded = false;
+  int _citadelLockedBalls = 0;
+  bool _citadelReleased = false;
   int _score = 0;
   int _ballsToPlay = 3;
   int _hits = 0;
@@ -321,6 +356,19 @@ class PinballGame extends FlameGame {
         'assets/gameplay/mechanical/moonbridge_ramp_active.png', 600,
       );
     }
+    if (table.id == PinballTableId.chronoCitadel) {
+      for (var i = 0; i < _citadelLockSprites.length; i++) {
+        _citadelLockSprites[i] = await _loadSprite(
+          'assets/gameplay/mechanical/citadel_lock_$i.png', 184,
+        );
+      }
+      _citadelGateClosedSprite = await _loadSprite(
+        'assets/gameplay/mechanical/citadel_gate_closed.png', 336,
+      );
+      _citadelGateOpenSprite = await _loadSprite(
+        'assets/gameplay/mechanical/citadel_gate_open.png', 336,
+      );
+    }
     _backplateSprite = await _loadSprite(
       'assets/backplates/${table.universe.name}.png',
       512,
@@ -369,6 +417,9 @@ class PinballGame extends FlameGame {
     _astralBumperHitSprite?.dispose();
     _moonbridgeIdleSprite?.dispose();
     _moonbridgeActiveSprite?.dispose();
+    for (final image in _citadelLockSprites) { image?.dispose(); }
+    _citadelGateClosedSprite?.dispose();
+    _citadelGateOpenSprite?.dispose();
     _slingLeftIdle?.dispose();
     _slingLeftHit?.dispose();
     _slingRightIdle?.dispose();
@@ -381,6 +432,11 @@ class PinballGame extends FlameGame {
     _astralBumperHitSprite = null;
     _moonbridgeIdleSprite = null;
     _moonbridgeActiveSprite = null;
+    for (var i = 0; i < _citadelLockSprites.length; i++) {
+      _citadelLockSprites[i] = null;
+    }
+    _citadelGateClosedSprite = null;
+    _citadelGateOpenSprite = null;
     _slingLeftIdle = null;
     _slingLeftHit = null;
     _slingRightIdle = null;
@@ -596,6 +652,8 @@ class PinballGame extends FlameGame {
     _finished = false;
     _paused = false;
     _multiballAwarded = false;
+    _citadelLockedBalls = 0;
+    _citadelReleased = false;
     _impacts.clear();
     _bumperLastGlow.clear();
     _slingLeftFlashUntil = -1;
@@ -836,6 +894,7 @@ class PinballGame extends FlameGame {
           );
         }
       }
+      if (_captureCitadelBall(ball)) continue;
       _specialBehavior(ball);
 
       final outlaneDrain = _arcadeLayout && ball.position.dy > 690 && (ball.position.dx < 75 || (ball.position.dx > 294 && ball.position.dx < 336));
@@ -883,6 +942,48 @@ class PinballGame extends FlameGame {
     }
   }
 
+  bool _captureCitadelBall(_Ball ball) {
+    if (table.id != PinballTableId.chronoCitadel ||
+        !CitadelBallLock.canCapture(
+          position: ball.position,
+          velocity: ball.velocity,
+          elapsed: _time,
+          lockedBalls: _citadelLockedBalls,
+          alreadyReleased: _citadelReleased,
+        )) return false;
+    // Store the actual playfield ball, not a fake visual counter. A lock is
+    // never charged as a drain, and the shooter rearms the replacement ball.
+    _balls.remove(ball);
+    _citadelLockedBalls++;
+    _registerHit(CitadelBallLock.lockPoints);
+    _announce('VAULT ${_citadelLockedBalls}/2 LOCKED', seconds: 2.3);
+    _pulse(CitadelBallLock.mouth, table.secondary, size: 2.0);
+    _logDeveloperEvent('CITADEL LOCK ${_citadelLockedBalls}/2');
+    audio?.play(PinballSound.gate);
+    _prepareBall();
+    return true;
+  }
+
+  void _releaseCitadelBalls() {
+    if (_citadelReleased || _citadelLockedBalls != CitadelBallLock.capacity) return;
+    _citadelLockedBalls = 0;
+    _citadelReleased = true;
+    _multiballAwarded = true;
+    for (var i = 0; i < CitadelBallLock.capacity; i++) {
+      _balls.add(_Ball(
+        CitadelBallLock.releasedPositions[i],
+        CitadelBallLock.releasedVelocities[i],
+      ));
+    }
+    _registerHit(CitadelBallLock.releasePoints);
+    _announce('CITADEL 3-BALL RELEASE +1500', seconds: 3);
+    _pulse(CitadelBallLock.mouth, table.accent, size: 4);
+    _logDeveloperEvent('CITADEL MULTIBALL 3 BALLS');
+    _shake = reducedMotion ? 0 : math.max(_shake, 0.32);
+    audio?.play(PinballSound.multiball);
+    _notifyHud();
+  }
+
   void _specialBehavior(_Ball ball) {
     switch (table.universe) {
       case PinballUniverseId.celestial:
@@ -921,12 +1022,18 @@ class PinballGame extends FlameGame {
         if (table.variant == 0) {
           _movingGear(ball, Offset(200 + 36 * math.sin(_time * 1.5), 433));
         } else if (table.variant == 1) {
-          if (_time % 4.8 < 2.8) {
-            _movingBarrier(
-              ball,
-              const Offset(127, 457),
-              const Offset(273, 457),
+          if (CitadelBallLock.isGateClosed(_time)) {
+            final gateContact = _movingBarrier(
+              ball, CitadelBallLock.gateA, CitadelBallLock.gateB,
             );
+            if (CitadelBallLock.canRelease(
+              actualGateContact: gateContact,
+              elapsed: _time,
+              lockedBalls: _citadelLockedBalls,
+              alreadyReleased: _citadelReleased,
+            )) {
+              _releaseCitadelBalls();
+            }
           }
         } else {
           final shift = 38 * math.sin(_time * 1.22);
@@ -966,13 +1073,14 @@ class PinballGame extends FlameGame {
     if (distance < radius * 0.35) audio?.play(PinballSound.gravity);
   }
 
-  void _movingBarrier(_Ball ball, Offset a, Offset b) {
-    if (!_collideSegment(ball, a, b, 0.95, width: 5)) return;
-    if (ball.portalCooldown > 0) return;
+  bool _movingBarrier(_Ball ball, Offset a, Offset b) {
+    if (!_collideSegment(ball, a, b, 0.95, width: 5)) return false;
+    if (ball.portalCooldown > 0) return false;
     ball.portalCooldown = 0.45;
     _pulse((a + b) / 2, table.secondary, size: 1.4);
     audio?.play(PinballSound.gate);
     _registerHit(450);
+    return true;
   }
 
   void _movingGear(_Ball ball, Offset center) {
@@ -1014,7 +1122,10 @@ class PinballGame extends FlameGame {
       _pulse(const Offset(200, 300), table.secondary, size: 5);
       _shake = reducedMotion ? 0 : 0.45;
     }
-    if (!_multiballAwarded && _hits >= 12) {
+    // Chrono Citadel requires two physically trapped balls and an actual
+    // gate strike; it must never gain fake balls from the global hit counter.
+    if (table.id != PinballTableId.chronoCitadel &&
+        !_multiballAwarded && _hits >= 12) {
       _multiballAwarded = true;
       _balls.add(_Ball(const Offset(182, 182), const Offset(-190, 320)));
       _balls.add(_Ball(const Offset(222, 182), const Offset(190, 320)));
@@ -1321,6 +1432,7 @@ class PinballGame extends FlameGame {
         );
       }
     }
+    _drawCitadelVaultHardware(c);
     for (var i = 0; i < _bumpers.length; i++) {
       final bumper = _bumpers[i];
       final sinceHit = _time - (_bumperLastGlow[i] ?? -100);
@@ -1624,14 +1736,11 @@ class PinballGame extends FlameGame {
             _drawRing(c, center, 21, table.secondary, 6);
           }
         } else if (table.variant == 1) {
-          if (_time % 4.8 < 2.8) {
-            _glowLine(
-              c,
-              const Offset(127, 457),
-              const Offset(273, 457),
-              table.accent,
-              7,
-            );
+          // Fallback only: the premium gate sprites share this collider.
+          if (_citadelGateClosedSprite == null &&
+              CitadelBallLock.isGateClosed(_time)) {
+            _glowLine(c, CitadelBallLock.gateA,
+                CitadelBallLock.gateB, table.accent, 7);
           }
         } else if (table.variant == 2) {
           final shift = 38 * math.sin(_time * 1.22);
@@ -1650,6 +1759,31 @@ class PinballGame extends FlameGame {
           }
         }
     }
+  }
+
+  void _drawCitadelVaultHardware(Canvas c) {
+    if (table.id != PinballTableId.chronoCitadel) return;
+    void drawAsset(ui.Image? sprite, Rect rect) {
+      if (sprite == null) return;
+      c.drawImageRect(
+        sprite,
+        Rect.fromLTWH(0, 0, sprite.width.toDouble(),
+            sprite.height.toDouble()),
+        rect,
+        Paint()..filterQuality = FilterQuality.high,
+      );
+    }
+    final vault = _citadelLockSprites[_citadelLockedBalls];
+    if (vault != null) {
+      drawAsset(vault, CitadelBallLock.lockVisualRect);
+    } else {
+      _drawRing(c, CitadelBallLock.mouth, 21, table.accent, 4);
+    }
+    drawAsset(
+      CitadelBallLock.isGateClosed(_time)
+          ? _citadelGateClosedSprite : _citadelGateOpenSprite,
+      CitadelBallLock.gateVisualRect,
+    );
   }
 
   void _drawRing(

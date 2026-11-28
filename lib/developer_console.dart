@@ -93,8 +93,11 @@ class PinballDeveloperConsole extends StatelessWidget {
               runSpacing: 5,
               children: <Widget>[
                 for (final scenario in PinballDeveloperScenario.values)
-                  if (scenario != PinballDeveloperScenario.moonbridgeRamp ||
-                      currentTable == PinballTableId.moonfallSanctuary)
+                  if ((scenario != PinballDeveloperScenario.moonbridgeRamp ||
+                          currentTable == PinballTableId.moonfallSanctuary) &&
+                      ((scenario != PinballDeveloperScenario.citadelLock &&
+                              scenario != PinballDeveloperScenario.citadelRelease) ||
+                          currentTable == PinballTableId.chronoCitadel))
                     SizedBox(
                     width: 139,
                     child: OutlinedButton(

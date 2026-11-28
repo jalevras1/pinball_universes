@@ -43,7 +43,9 @@ void main() {
     expect(find.text('DEVELOPER • LIVE TEST'), findsOneWidget);
     for (final scenario in PinballDeveloperScenario.values) {
       expect(find.text(scenario.label),
-          scenario == PinballDeveloperScenario.moonbridgeRamp
+          scenario == PinballDeveloperScenario.moonbridgeRamp ||
+                  scenario == PinballDeveloperScenario.citadelLock ||
+                  scenario == PinballDeveloperScenario.citadelRelease
               ? findsNothing : findsOneWidget);
     }
     await tester.tap(find.text(PinballDeveloperScenario.weakLaunch.label));
@@ -101,6 +103,44 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(button);
     expect(requested, PinballDeveloperScenario.moonbridgeRamp);
+    events.dispose();
+  });
+
+  testWidgets('Chrono Citadel exposes real capture and release developer scenarios',
+      (tester) async {
+    PinballDeveloperScenario? requested;
+    final events = ValueNotifier<List<String>>(<String>[]);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 330, height: 440,
+          child: PinballDeveloperConsole(
+            accent: Colors.orange,
+            currentTable: PinballTableId.chronoCitadel,
+            collisionOverlayVisible: false,
+            scoreNotSaved: false,
+            eventFeed: events,
+            onScenario: (scenario) => requested = scenario,
+            onStepFrame: () {},
+            onClearEvents: () {},
+            onOverlayChanged: (_) {},
+            onTableSelected: (_) {},
+            onClose: () {},
+          ),
+        ),
+      ),
+    ));
+    expect(find.text('MOONBRIDGE RAMP'), findsNothing);
+    final capture = find.text('CITADEL CAPTURE');
+    final release = find.text('CITADEL RELEASE');
+    expect(capture, findsOneWidget);
+    expect(release, findsOneWidget);
+    await tester.ensureVisible(capture);
+    await tester.tap(capture);
+    expect(requested, PinballDeveloperScenario.citadelLock);
+    await tester.ensureVisible(release);
+    await tester.tap(release);
+    expect(requested, PinballDeveloperScenario.citadelRelease);
     events.dispose();
   });
 

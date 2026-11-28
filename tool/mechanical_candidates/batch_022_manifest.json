@@ -1,0 +1,127 @@
+{
+  "pack": 22,
+  "universe": "clockwork",
+  "board": "chronoCitadel",
+  "state_machine": {
+    "captured_ball_limit": 2,
+    "capture_trigger": [
+      198,
+      505
+    ],
+    "capture_radius": 21,
+    "capture_min_descending_speed": 90,
+    "capture_only_when_gate_open": true,
+    "gate_period_seconds": 4.8,
+    "closed_duration_seconds": 2.8,
+    "gate_collider_world": [
+      [
+        127,
+        457
+      ],
+      [
+        273,
+        457
+      ]
+    ],
+    "gate_collider_half_width": 5,
+    "device_draw_rect_world": [
+      152,
+      477,
+      92,
+      92
+    ],
+    "gate_draw_rect_world": [
+      116,
+      438,
+      168,
+      40
+    ],
+    "lock_capture_points": 300,
+    "release_objective_points": 1500,
+    "released_ball_count": 2,
+    "release_requires_closed_gate_contact": true,
+    "outlet_positions": [
+      [
+        162,
+        524
+      ],
+      [
+        234,
+        524
+      ]
+    ],
+    "outlet_velocities": [
+      [
+        -470,
+        -485
+      ],
+      [
+        470,
+        -485
+      ]
+    ]
+  },
+  "assets": [
+    {
+      "filename": "citadel_lock_0.png",
+      "size": [
+        184,
+        184
+      ],
+      "mode": "RGBA",
+      "opaque_pixels": 22119,
+      "transparent_pixels": 8766,
+      "bytes": 47066,
+      "sha256": "7ed54f151978e8cdd0269645886925cba503c326fdb2652fab6f5bc105111fc7"
+    },
+    {
+      "filename": "citadel_lock_1.png",
+      "size": [
+        184,
+        184
+      ],
+      "mode": "RGBA",
+      "opaque_pixels": 22119,
+      "transparent_pixels": 8766,
+      "bytes": 48955,
+      "sha256": "c2f0884c6b0c334dd6d14e116d8a0e83d1dc3a2b16209139ccda7676203ecc30"
+    },
+    {
+      "filename": "citadel_lock_2.png",
+      "size": [
+        184,
+        184
+      ],
+      "mode": "RGBA",
+      "opaque_pixels": 22119,
+      "transparent_pixels": 8766,
+      "bytes": 47605,
+      "sha256": "a9f2962b4ce3a27b8d970528a0a8224ee7e2980b068bd7636cdc7c72f6a54377"
+    },
+    {
+      "filename": "citadel_gate_closed.png",
+      "size": [
+        336,
+        80
+      ],
+      "mode": "RGBA",
+      "opaque_pixels": 9588,
+      "transparent_pixels": 3876,
+      "bytes": 3803,
+      "sha256": "5521e0c649a12c40119e6081de01a92903f7c74ef8160ac2831d17161e058ab5"
+    },
+    {
+      "filename": "citadel_gate_open.png",
+      "size": [
+        336,
+        80
+      ],
+      "mode": "RGBA",
+      "opaque_pixels": 6576,
+      "transparent_pixels": 3876,
+      "bytes": 5579,
+      "sha256": "4c96b81613cbe18ac79963e38ad1c6569416515448b6e466c99f0ecd38e8040e"
+    }
+  ],
+  "authoring_note": "Actual game physics defines all captures and contact. These PNGs are render-only overlays; they never define invisible extra colliders."
+}

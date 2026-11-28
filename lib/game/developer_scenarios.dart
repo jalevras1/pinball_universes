@@ -9,6 +9,8 @@ enum PinballDeveloperScenario {
   rightFlipper('RIGHT FLIPPER'),
   bumperContact('BUMPER CONTACT'),
   moonbridgeRamp('MOONBRIDGE RAMP'),
+  citadelLock('CITADEL CAPTURE'),
+  citadelRelease('CITADEL RELEASE'),
   drain('DRAIN / REARM'),
   resetRound('RESET ROUND');
 
