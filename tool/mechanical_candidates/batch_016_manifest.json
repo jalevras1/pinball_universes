@@ -1,0 +1,1754 @@
+{
+  "pack": "PINBALL_UNIVERSES_MECHANICAL_PACK_016",
+  "version": "1.0",
+  "status": "production candidate, not gameplay integrated",
+  "sprite_dimensions_px": [
+    512,
+    512
+  ],
+  "pixel_coordinate_origin": "top-left; scale collider geometry with sprites",
+  "asset_count": 11,
+  "png_count": 40,
+  "assets": [
+    {
+      "id": "volcanic_forge_bulkhead",
+      "theme": "volcanic",
+      "type": "dual_retractable_wall",
+      "description": "Twin powered barriers that retract into protected vertical housings",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/volcanic_forge_bulkhead_sealed.png",
+        "sprites/volcanic_forge_bulkhead_retracting.png",
+        "sprites/volcanic_forge_bulkhead_clearance.png",
+        "sprites/volcanic_forge_bulkhead_open.png"
+      ],
+      "geometry": {
+        "type": "sliding_aabbs",
+        "states": [
+          {
+            "state": "sealed",
+            "blocking_elements": [
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  104,
+                  185,
+                  151.0,
+                  145
+                ]
+              },
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  256.0,
+                  185,
+                  149.0,
+                  145
+                ]
+              }
+            ],
+            "gap_width_px": 0.0,
+            "opens_horizontal": true,
+            "recommended_requires_clearance_px": 50
+          },
+          {
+            "state": "retracting",
+            "blocking_elements": [
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  104,
+                  185,
+                  122.0,
+                  145
+                ]
+              },
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  285.0,
+                  185,
+                  120.0,
+                  145
+                ]
+              }
+            ],
+            "gap_width_px": 58.0,
+            "opens_horizontal": true,
+            "recommended_requires_clearance_px": 50
+          },
+          {
+            "state": "clearance",
+            "blocking_elements": [
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  104,
+                  185,
+                  88.0,
+                  145
+                ]
+              },
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  319.0,
+                  185,
+                  86.0,
+                  145
+                ]
+              }
+            ],
+            "gap_width_px": 126.0,
+            "opens_horizontal": true,
+            "recommended_requires_clearance_px": 50
+          },
+          {
+            "state": "open",
+            "blocking_elements": [
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  104,
+                  185,
+                  56.0,
+                  145
+                ]
+              },
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  351.0,
+                  185,
+                  54.0,
+                  145
+                ]
+              }
+            ],
+            "gap_width_px": 190.0,
+            "opens_horizontal": true,
+            "recommended_requires_clearance_px": 50
+          }
+        ],
+        "passage_y_range_px": [
+          185,
+          330
+        ]
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "frame_states": [
+        "sealed",
+        "retracting",
+        "clearance",
+        "open"
+      ],
+      "gameplay_spec": {
+        "recommended_collision_mode": "kinematic solid; calculate swept collision between states",
+        "sound_cues": [
+          "servo_movement",
+          "barrier_lock"
+        ],
+        "initial_state": "sealed"
+      }
+    },
+    {
+      "id": "ocean_tidal_floodgate",
+      "theme": "ocean",
+      "type": "dual_retractable_wall",
+      "description": "Twin powered barriers that retract into protected vertical housings",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/ocean_tidal_floodgate_sealed.png",
+        "sprites/ocean_tidal_floodgate_retracting.png",
+        "sprites/ocean_tidal_floodgate_clearance.png",
+        "sprites/ocean_tidal_floodgate_open.png"
+      ],
+      "geometry": {
+        "type": "sliding_aabbs",
+        "states": [
+          {
+            "state": "sealed",
+            "blocking_elements": [
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  104,
+                  165,
+                  151.0,
+                  175
+                ]
+              },
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  256.0,
+                  165,
+                  149.0,
+                  175
+                ]
+              }
+            ],
+            "gap_width_px": 0.0,
+            "opens_horizontal": true,
+            "recommended_requires_clearance_px": 50
+          },
+          {
+            "state": "retracting",
+            "blocking_elements": [
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  104,
+                  165,
+                  122.0,
+                  175
+                ]
+              },
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  285.0,
+                  165,
+                  120.0,
+                  175
+                ]
+              }
+            ],
+            "gap_width_px": 58.0,
+            "opens_horizontal": true,
+            "recommended_requires_clearance_px": 50
+          },
+          {
+            "state": "clearance",
+            "blocking_elements": [
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  104,
+                  165,
+                  88.0,
+                  175
+                ]
+              },
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  319.0,
+                  165,
+                  86.0,
+                  175
+                ]
+              }
+            ],
+            "gap_width_px": 126.0,
+            "opens_horizontal": true,
+            "recommended_requires_clearance_px": 50
+          },
+          {
+            "state": "open",
+            "blocking_elements": [
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  104,
+                  165,
+                  56.0,
+                  175
+                ]
+              },
+              {
+                "shape": "aabb",
+                "xywh_px": [
+                  351.0,
+                  165,
+                  54.0,
+                  175
+                ]
+              }
+            ],
+            "gap_width_px": 190.0,
+            "opens_horizontal": true,
+            "recommended_requires_clearance_px": 50
+          }
+        ],
+        "passage_y_range_px": [
+          165,
+          340
+        ]
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "frame_states": [
+        "sealed",
+        "retracting",
+        "clearance",
+        "open"
+      ],
+      "gameplay_spec": {
+        "recommended_collision_mode": "kinematic solid; calculate swept collision between states",
+        "sound_cues": [
+          "servo_movement",
+          "barrier_lock"
+        ],
+        "initial_state": "sealed"
+      }
+    },
+    {
+      "id": "cyber_magnetic_shuttle",
+      "theme": "cyber",
+      "type": "animated_moving_blocker",
+      "description": "Lateral moving central obstacle riding a powered track",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/cyber_magnetic_shuttle_position_00.png",
+        "sprites/cyber_magnetic_shuttle_position_01.png",
+        "sprites/cyber_magnetic_shuttle_position_02.png",
+        "sprites/cyber_magnetic_shuttle_position_03.png",
+        "sprites/cyber_magnetic_shuttle_position_04.png"
+      ],
+      "geometry": {
+        "type": "kinematic_shuttle",
+        "states": [
+          {
+            "frame": 0,
+            "center_x_px": 154,
+            "blocking_body": {
+              "shape": "aabb",
+              "xywh_px": [
+                82,
+                168,
+                144,
+                151
+              ]
+            },
+            "fixed_guide_rail": {
+              "shape": "segment_capsule",
+              "a_px": [
+                58,
+                366
+              ],
+              "b_px": [
+                454,
+                366
+              ],
+              "radius_px": 15
+            }
+          },
+          {
+            "frame": 1,
+            "center_x_px": 204,
+            "blocking_body": {
+              "shape": "aabb",
+              "xywh_px": [
+                132,
+                168,
+                144,
+                151
+              ]
+            },
+            "fixed_guide_rail": {
+              "shape": "segment_capsule",
+              "a_px": [
+                58,
+                366
+              ],
+              "b_px": [
+                454,
+                366
+              ],
+              "radius_px": 15
+            }
+          },
+          {
+            "frame": 2,
+            "center_x_px": 254,
+            "blocking_body": {
+              "shape": "aabb",
+              "xywh_px": [
+                182,
+                168,
+                144,
+                151
+              ]
+            },
+            "fixed_guide_rail": {
+              "shape": "segment_capsule",
+              "a_px": [
+                58,
+                366
+              ],
+              "b_px": [
+                454,
+                366
+              ],
+              "radius_px": 15
+            }
+          },
+          {
+            "frame": 3,
+            "center_x_px": 304,
+            "blocking_body": {
+              "shape": "aabb",
+              "xywh_px": [
+                232,
+                168,
+                144,
+                151
+              ]
+            },
+            "fixed_guide_rail": {
+              "shape": "segment_capsule",
+              "a_px": [
+                58,
+                366
+              ],
+              "b_px": [
+                454,
+                366
+              ],
+              "radius_px": 15
+            }
+          },
+          {
+            "frame": 4,
+            "center_x_px": 354,
+            "blocking_body": {
+              "shape": "aabb",
+              "xywh_px": [
+                282,
+                168,
+                144,
+                151
+              ]
+            },
+            "fixed_guide_rail": {
+              "shape": "segment_capsule",
+              "a_px": [
+                58,
+                366
+              ],
+              "b_px": [
+                454,
+                366
+              ],
+              "radius_px": 15
+            }
+          }
+        ],
+        "track_a_px": [
+          154,
+          243
+        ],
+        "track_b_px": [
+          354,
+          243
+        ],
+        "step_positions_px": [
+          154,
+          204,
+          254,
+          304,
+          354
+        ]
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "frame_states": [
+        "position_00",
+        "position_01",
+        "position_02",
+        "position_03",
+        "position_04"
+      ],
+      "gameplay_spec": {
+        "recommended_mode": "continuous sinusoidal or ping-pong interpolation; avoid teleporting collider on frame change",
+        "impact": "deflect with conservation of momentum and moving-body velocity"
+      }
+    },
+    {
+      "id": "fantasy_forked_stone_tunnel",
+      "theme": "fantasy",
+      "type": "split_level_tunnel",
+      "description": "Distinct two-route crossover with separate ball-height layers",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/fantasy_forked_stone_tunnel.png"
+      ],
+      "geometry": {
+        "type": "two_channel_height_aware",
+        "upper_channel_centerline_svg": "M 70 432 C 115 335, 154 286, 230 242 C 289 207, 360 146, 436 80",
+        "lower_channel_centerline_svg": "M 81 94 C 154 157, 216 155, 267 252 C 300 301, 361 363, 434 425",
+        "channel_nominal_outer_diameter_px": 94,
+        "channel_ball_center_width_px": 45,
+        "collision_requires": "height_layer, per-channel wall edges and one ball per path segment at a time"
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "gameplay_spec": {
+        "upper_height_layer": 1,
+        "lower_height_layer": 0,
+        "behavior": "do not collide balls in vertically separated tracks; verify physical ramp ingress and egress"
+      }
+    },
+    {
+      "id": "cyber_crossing_underpass",
+      "theme": "cyber",
+      "type": "split_level_tunnel",
+      "description": "Distinct two-route crossover with separate ball-height layers",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/cyber_crossing_underpass.png"
+      ],
+      "geometry": {
+        "type": "two_channel_height_aware",
+        "upper_channel_centerline_svg": "M 65 420 C 75 295, 162 230, 438 91",
+        "lower_channel_centerline_svg": "M 62 90 C 227 155, 305 235, 444 426",
+        "channel_nominal_outer_diameter_px": 94,
+        "channel_ball_center_width_px": 45,
+        "collision_requires": "height_layer, per-channel wall edges and one ball per path segment at a time"
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "gameplay_spec": {
+        "upper_height_layer": 1,
+        "lower_height_layer": 0,
+        "behavior": "do not collide balls in vertically separated tracks; verify physical ramp ingress and egress"
+      }
+    },
+    {
+      "id": "ocean_reef_twin_current",
+      "theme": "ocean",
+      "type": "split_level_tunnel",
+      "description": "Distinct two-route crossover with separate ball-height layers",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/ocean_reef_twin_current.png"
+      ],
+      "geometry": {
+        "type": "two_channel_height_aware",
+        "upper_channel_centerline_svg": "M 62 430 C 159 426, 108 257, 254 248 C 376 245, 317 109, 442 85",
+        "lower_channel_centerline_svg": "M 61 92 C 179 82, 158 256, 270 278 C 390 302, 332 429, 446 430",
+        "channel_nominal_outer_diameter_px": 94,
+        "channel_ball_center_width_px": 45,
+        "collision_requires": "height_layer, per-channel wall edges and one ball per path segment at a time"
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "gameplay_spec": {
+        "upper_height_layer": 1,
+        "lower_height_layer": 0,
+        "behavior": "do not collide balls in vertically separated tracks; verify physical ramp ingress and egress"
+      }
+    },
+    {
+      "id": "cosmic_orbital_three_ball_lock",
+      "theme": "cosmic",
+      "type": "three_ball_multiball_lock",
+      "description": "Three-ball lock with real states for capture and release",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/cosmic_orbital_three_ball_lock_loaded_0.png",
+        "sprites/cosmic_orbital_three_ball_lock_loaded_1.png",
+        "sprites/cosmic_orbital_three_ball_lock_loaded_2.png",
+        "sprites/cosmic_orbital_three_ball_lock_loaded_3.png"
+      ],
+      "geometry": {
+        "type": "capture_hold_slots",
+        "states": [
+          {
+            "occupied_balls": 0,
+            "capture_trigger": {
+              "shape": "circle",
+              "center_px": [
+                256,
+                348
+              ],
+              "radius_px": 38
+            },
+            "holding_chambers_px": [],
+            "locked": false,
+            "release_condition": "all three loaded plus external objective"
+          },
+          {
+            "occupied_balls": 1,
+            "capture_trigger": {
+              "shape": "circle",
+              "center_px": [
+                256,
+                348
+              ],
+              "radius_px": 38
+            },
+            "holding_chambers_px": [
+              [
+                173,
+                257
+              ]
+            ],
+            "locked": true,
+            "release_condition": "all three loaded plus external objective"
+          },
+          {
+            "occupied_balls": 2,
+            "capture_trigger": {
+              "shape": "circle",
+              "center_px": [
+                256,
+                348
+              ],
+              "radius_px": 38
+            },
+            "holding_chambers_px": [
+              [
+                173,
+                257
+              ],
+              [
+                256,
+                176
+              ]
+            ],
+            "locked": true,
+            "release_condition": "all three loaded plus external objective"
+          },
+          {
+            "occupied_balls": 3,
+            "capture_trigger": {
+              "shape": "circle",
+              "center_px": [
+                256,
+                348
+              ],
+              "radius_px": 38
+            },
+            "holding_chambers_px": [
+              [
+                173,
+                257
+              ],
+              [
+                256,
+                176
+              ],
+              [
+                339,
+                257
+              ]
+            ],
+            "locked": true,
+            "release_condition": "all three loaded plus external objective"
+          }
+        ],
+        "max_capacity": 3,
+        "visual_centers_px": [
+          [
+            173,
+            257
+          ],
+          [
+            256,
+            176
+          ],
+          [
+            339,
+            257
+          ]
+        ]
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "frame_states": [
+        "loaded_0",
+        "loaded_1",
+        "loaded_2",
+        "loaded_3"
+      ],
+      "gameplay_spec": {
+        "must_instantiate_balls_on_release": true,
+        "must_disable_ball_physics_while_locked": true,
+        "initial_state": 0,
+        "note": "art is a lock illustration; implement balls and scoring separately"
+      }
+    },
+    {
+      "id": "ancient_sarcophagus_lock",
+      "theme": "ancient",
+      "type": "three_ball_multiball_lock",
+      "description": "Three-ball lock with real states for capture and release",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/ancient_sarcophagus_lock_loaded_0.png",
+        "sprites/ancient_sarcophagus_lock_loaded_1.png",
+        "sprites/ancient_sarcophagus_lock_loaded_2.png",
+        "sprites/ancient_sarcophagus_lock_loaded_3.png"
+      ],
+      "geometry": {
+        "type": "capture_hold_slots",
+        "states": [
+          {
+            "occupied_balls": 0,
+            "capture_trigger": {
+              "shape": "circle",
+              "center_px": [
+                256,
+                348
+              ],
+              "radius_px": 38
+            },
+            "holding_chambers_px": [],
+            "locked": false,
+            "release_condition": "all three loaded plus external objective"
+          },
+          {
+            "occupied_balls": 1,
+            "capture_trigger": {
+              "shape": "circle",
+              "center_px": [
+                256,
+                348
+              ],
+              "radius_px": 38
+            },
+            "holding_chambers_px": [
+              [
+                173,
+                257
+              ]
+            ],
+            "locked": true,
+            "release_condition": "all three loaded plus external objective"
+          },
+          {
+            "occupied_balls": 2,
+            "capture_trigger": {
+              "shape": "circle",
+              "center_px": [
+                256,
+                348
+              ],
+              "radius_px": 38
+            },
+            "holding_chambers_px": [
+              [
+                173,
+                257
+              ],
+              [
+                256,
+                176
+              ]
+            ],
+            "locked": true,
+            "release_condition": "all three loaded plus external objective"
+          },
+          {
+            "occupied_balls": 3,
+            "capture_trigger": {
+              "shape": "circle",
+              "center_px": [
+                256,
+                348
+              ],
+              "radius_px": 38
+            },
+            "holding_chambers_px": [
+              [
+                173,
+                257
+              ],
+              [
+                256,
+                176
+              ],
+              [
+                339,
+                257
+              ]
+            ],
+            "locked": true,
+            "release_condition": "all three loaded plus external objective"
+          }
+        ],
+        "max_capacity": 3,
+        "visual_centers_px": [
+          [
+            173,
+            257
+          ],
+          [
+            256,
+            176
+          ],
+          [
+            339,
+            257
+          ]
+        ]
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "frame_states": [
+        "loaded_0",
+        "loaded_1",
+        "loaded_2",
+        "loaded_3"
+      ],
+      "gameplay_spec": {
+        "must_instantiate_balls_on_release": true,
+        "must_disable_ball_physics_while_locked": true,
+        "initial_state": 0,
+        "note": "art is a lock illustration; implement balls and scoring separately"
+      }
+    },
+    {
+      "id": "volcanic_magma_kicker",
+      "theme": "volcanic",
+      "type": "themed_kicker_launcher",
+      "description": "Four spring compression illustrations for controlled upward ball launch",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/volcanic_magma_kicker_compression_0.png",
+        "sprites/volcanic_magma_kicker_compression_1.png",
+        "sprites/volcanic_magma_kicker_compression_2.png",
+        "sprites/volcanic_magma_kicker_compression_3.png"
+      ],
+      "geometry": {
+        "type": "variable_power_linear_piston",
+        "axis_segment_px": [
+          [
+            256,
+            160
+          ],
+          [
+            256,
+            400
+          ]
+        ],
+        "states": [
+          {
+            "level": 0,
+            "plunger_head_center_px": [
+              256,
+              192
+            ],
+            "linear_travel_px": 0,
+            "suggested_power_fraction": 0.0,
+            "launch_direction_px": [
+              0,
+              -1
+            ]
+          },
+          {
+            "level": 1,
+            "plunger_head_center_px": [
+              256,
+              244
+            ],
+            "linear_travel_px": 52,
+            "suggested_power_fraction": 0.3333333333333333,
+            "launch_direction_px": [
+              0,
+              -1
+            ]
+          },
+          {
+            "level": 2,
+            "plunger_head_center_px": [
+              256,
+              296
+            ],
+            "linear_travel_px": 104,
+            "suggested_power_fraction": 0.6666666666666666,
+            "launch_direction_px": [
+              0,
+              -1
+            ]
+          },
+          {
+            "level": 3,
+            "plunger_head_center_px": [
+              256,
+              348
+            ],
+            "linear_travel_px": 156,
+            "suggested_power_fraction": 1.0,
+            "launch_direction_px": [
+              0,
+              -1
+            ]
+          }
+        ],
+        "launch_exit_px": [
+          256,
+          56
+        ]
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "frame_states": [
+        "compression_0",
+        "compression_1",
+        "compression_2",
+        "compression_3"
+      ],
+      "gameplay_spec": {
+        "manual_or_automatic_trigger": "physics engine determines launch moment",
+        "impulse_multiplier_spec": "calibrate experimentally; artwork contains no fixed game impulse",
+        "direction_unit": [
+          0,
+          -1
+        ]
+      }
+    },
+    {
+      "id": "ocean_pressure_launcher",
+      "theme": "ocean",
+      "type": "themed_kicker_launcher",
+      "description": "Four spring compression illustrations for controlled upward ball launch",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/ocean_pressure_launcher_compression_0.png",
+        "sprites/ocean_pressure_launcher_compression_1.png",
+        "sprites/ocean_pressure_launcher_compression_2.png",
+        "sprites/ocean_pressure_launcher_compression_3.png"
+      ],
+      "geometry": {
+        "type": "variable_power_linear_piston",
+        "axis_segment_px": [
+          [
+            256,
+            160
+          ],
+          [
+            256,
+            400
+          ]
+        ],
+        "states": [
+          {
+            "level": 0,
+            "plunger_head_center_px": [
+              256,
+              192
+            ],
+            "linear_travel_px": 0,
+            "suggested_power_fraction": 0.0,
+            "launch_direction_px": [
+              0,
+              -1
+            ]
+          },
+          {
+            "level": 1,
+            "plunger_head_center_px": [
+              256,
+              244
+            ],
+            "linear_travel_px": 52,
+            "suggested_power_fraction": 0.3333333333333333,
+            "launch_direction_px": [
+              0,
+              -1
+            ]
+          },
+          {
+            "level": 2,
+            "plunger_head_center_px": [
+              256,
+              296
+            ],
+            "linear_travel_px": 104,
+            "suggested_power_fraction": 0.6666666666666666,
+            "launch_direction_px": [
+              0,
+              -1
+            ]
+          },
+          {
+            "level": 3,
+            "plunger_head_center_px": [
+              256,
+              348
+            ],
+            "linear_travel_px": 156,
+            "suggested_power_fraction": 1.0,
+            "launch_direction_px": [
+              0,
+              -1
+            ]
+          }
+        ],
+        "launch_exit_px": [
+          256,
+          56
+        ]
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "frame_states": [
+        "compression_0",
+        "compression_1",
+        "compression_2",
+        "compression_3"
+      ],
+      "gameplay_spec": {
+        "manual_or_automatic_trigger": "physics engine determines launch moment",
+        "impulse_multiplier_spec": "calibrate experimentally; artwork contains no fixed game impulse",
+        "direction_unit": [
+          0,
+          -1
+        ]
+      }
+    },
+    {
+      "id": "ancient_scarab_dual_paddle_rotor",
+      "theme": "ancient",
+      "type": "rotating_dual_paddle_deflector",
+      "description": "Ancient scarab-style two-sided rotor with direction-changing paddles",
+      "dimensions_px": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/ancient_scarab_dual_paddle_rotor_frame_00.png",
+        "sprites/ancient_scarab_dual_paddle_rotor_frame_01.png",
+        "sprites/ancient_scarab_dual_paddle_rotor_frame_02.png",
+        "sprites/ancient_scarab_dual_paddle_rotor_frame_03.png",
+        "sprites/ancient_scarab_dual_paddle_rotor_frame_04.png",
+        "sprites/ancient_scarab_dual_paddle_rotor_frame_05.png",
+        "sprites/ancient_scarab_dual_paddle_rotor_frame_06.png",
+        "sprites/ancient_scarab_dual_paddle_rotor_frame_07.png"
+      ],
+      "geometry": {
+        "type": "rotating_kinematic_capsules",
+        "center_px": [
+          256,
+          256
+        ],
+        "angular_states": [
+          {
+            "frame": 0,
+            "rotation_degrees": 0,
+            "paddle_segments": [
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  395.0,
+                  256.0
+                ],
+                "radius_px": 23
+              },
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  117.0,
+                  256.0
+                ],
+                "radius_px": 23
+              }
+            ]
+          },
+          {
+            "frame": 1,
+            "rotation_degrees": 45,
+            "paddle_segments": [
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  354.29,
+                  354.29
+                ],
+                "radius_px": 23
+              },
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  157.71,
+                  157.71
+                ],
+                "radius_px": 23
+              }
+            ]
+          },
+          {
+            "frame": 2,
+            "rotation_degrees": 90,
+            "paddle_segments": [
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  256.0,
+                  395.0
+                ],
+                "radius_px": 23
+              },
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  256.0,
+                  117.0
+                ],
+                "radius_px": 23
+              }
+            ]
+          },
+          {
+            "frame": 3,
+            "rotation_degrees": 135,
+            "paddle_segments": [
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  157.71,
+                  354.29
+                ],
+                "radius_px": 23
+              },
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  354.29,
+                  157.71
+                ],
+                "radius_px": 23
+              }
+            ]
+          },
+          {
+            "frame": 4,
+            "rotation_degrees": 180,
+            "paddle_segments": [
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  117.0,
+                  256.0
+                ],
+                "radius_px": 23
+              },
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  395.0,
+                  256.0
+                ],
+                "radius_px": 23
+              }
+            ]
+          },
+          {
+            "frame": 5,
+            "rotation_degrees": 225,
+            "paddle_segments": [
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  157.71,
+                  157.71
+                ],
+                "radius_px": 23
+              },
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  354.29,
+                  354.29
+                ],
+                "radius_px": 23
+              }
+            ]
+          },
+          {
+            "frame": 6,
+            "rotation_degrees": 270,
+            "paddle_segments": [
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  256.0,
+                  117.0
+                ],
+                "radius_px": 23
+              },
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  256.0,
+                  395.0
+                ],
+                "radius_px": 23
+              }
+            ]
+          },
+          {
+            "frame": 7,
+            "rotation_degrees": 315,
+            "paddle_segments": [
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  354.29,
+                  157.71
+                ],
+                "radius_px": 23
+              },
+              {
+                "a_px": [
+                  256.0,
+                  256.0
+                ],
+                "b_px": [
+                  157.71,
+                  354.29
+                ],
+                "radius_px": 23
+              }
+            ]
+          }
+        ],
+        "hub_radius_px": 45
+      },
+      "integration_status": "candidate_collision_and_animation_unverified",
+      "frame_states": [
+        "angle_0",
+        "angle_45",
+        "angle_90",
+        "angle_135",
+        "angle_180",
+        "angle_225",
+        "angle_270",
+        "angle_315"
+      ],
+      "gameplay_spec": {
+        "requires": "angular velocity collision and motor control, not static art",
+        "scoring": "hit should register when ball contacts paddle"
+      }
+    }
+  ],
+  "qa": {
+    "passed": [
+      "40 distinct RGBA frames",
+      "nonzero content and alpha edges",
+      "correct sprite dimensions",
+      "transparent corners",
+      "no duplicate frame hashes",
+      "frame references resolve",
+      "board placements within sample board bounds"
+    ],
+    "not_performed": [
+      "live Flutter Flame build tests",
+      "ball-through-tunnel collision and height logic",
+      "animation in game engine",
+      "real-time launcher impulses and motorized contact",
+      "phone browser playtesting"
+    ],
+    "files": {
+      "volcanic_forge_bulkhead_sealed.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 150236,
+        "partial_alpha_pixels": 3979,
+        "opaque_pixels": 107929,
+        "sha256": "ff014abc1ebcadd92d285a38c9c2b109a8ccf40cfdd431b137b41b1e23828989"
+      },
+      "volcanic_forge_bulkhead_retracting.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 158124,
+        "partial_alpha_pixels": 4160,
+        "opaque_pixels": 99860,
+        "sha256": "a204828ceab2f73e3b5012c14ddf59f2048c8379e4a8d40e81eb02f00477f244"
+      },
+      "volcanic_forge_bulkhead_clearance.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 168528,
+        "partial_alpha_pixels": 4024,
+        "opaque_pixels": 89592,
+        "sha256": "cfe4be9723eeb9844522746bf7c831bae988a8ab3738d056e11a08955adea4f0"
+      },
+      "volcanic_forge_bulkhead_open.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 178320,
+        "partial_alpha_pixels": 3896,
+        "opaque_pixels": 79928,
+        "sha256": "547aebcb1976bded0b91a8bdc729a428d3861489ce8b32cdb511fca2f206dbc0"
+      },
+      "ocean_tidal_floodgate_sealed.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 140966,
+        "partial_alpha_pixels": 4039,
+        "opaque_pixels": 117139,
+        "sha256": "aeee81b81847ec4d3a5eac68d75ce6a1ac7526b45f27c01610ae3de2bba4b351"
+      },
+      "ocean_tidal_floodgate_retracting.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 150384,
+        "partial_alpha_pixels": 4280,
+        "opaque_pixels": 107480,
+        "sha256": "399df7dba51cd186bf7ed8f01bc71db98c32c3ab280aa0eae7d0644e754dd81e"
+      },
+      "ocean_tidal_floodgate_clearance.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 162828,
+        "partial_alpha_pixels": 4144,
+        "opaque_pixels": 95172,
+        "sha256": "28072b8ab197859d9cf4b6a78b90c4cab376a936d794a86e4817639318236bfc"
+      },
+      "ocean_tidal_floodgate_open.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 174540,
+        "partial_alpha_pixels": 4016,
+        "opaque_pixels": 83588,
+        "sha256": "aac67fdb0b24081f4e4131acc836201e618205f294e712516b5f7d695e6ad6c6"
+      },
+      "cyber_magnetic_shuttle_position_00.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 221288,
+        "partial_alpha_pixels": 909,
+        "opaque_pixels": 39947,
+        "sha256": "d722a5963ff37e75b11c9793570a27f49e509836c78dcdf0c947e45b8866baf7"
+      },
+      "cyber_magnetic_shuttle_position_01.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 221288,
+        "partial_alpha_pixels": 909,
+        "opaque_pixels": 39947,
+        "sha256": "6a43aaa092500f51ef2429c8e1564d34e63a185c88cf4022f7b0a7bae2ce3ec5"
+      },
+      "cyber_magnetic_shuttle_position_02.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 221288,
+        "partial_alpha_pixels": 909,
+        "opaque_pixels": 39947,
+        "sha256": "68fcaa37f13b1e213dc4a45c102edb2b4435046d574dac07466696a8b6d27eb8"
+      },
+      "cyber_magnetic_shuttle_position_03.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 221288,
+        "partial_alpha_pixels": 909,
+        "opaque_pixels": 39947,
+        "sha256": "d36e3578f2f17e61b9a48faad8363f7668c57b169b9fded06ebd44596d041741"
+      },
+      "cyber_magnetic_shuttle_position_04.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 221288,
+        "partial_alpha_pixels": 909,
+        "opaque_pixels": 39947,
+        "sha256": "053e497303036e0b8227ff88616d76765a69c9ce6c266aa969862d08fcfe7d53"
+      },
+      "fantasy_forked_stone_tunnel.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 149011,
+        "partial_alpha_pixels": 2837,
+        "opaque_pixels": 110296,
+        "sha256": "50e1a0e6e87029f4767c91ece4978b3bea167f393c489dab889585e91f257ede"
+      },
+      "cyber_crossing_underpass.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 144755,
+        "partial_alpha_pixels": 2817,
+        "opaque_pixels": 114572,
+        "sha256": "0dea92fcdfc602a8df657a24c0275d761e0c8217a3b6a77904ec7709ba4a8944"
+      },
+      "ocean_reef_twin_current.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 142663,
+        "partial_alpha_pixels": 2885,
+        "opaque_pixels": 116596,
+        "sha256": "4d2fd84df2b2bc585b33a8ddf334451bb99d39c5de983d4c59e322b715ee76fb"
+      },
+      "cosmic_orbital_three_ball_lock_loaded_0.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 116190,
+        "partial_alpha_pixels": 1598,
+        "opaque_pixels": 144356,
+        "sha256": "c753b8597469693d4f1370120fa0e46e7920438b1624087c02ca3a0ec37196fd"
+      },
+      "cosmic_orbital_three_ball_lock_loaded_1.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 116190,
+        "partial_alpha_pixels": 1598,
+        "opaque_pixels": 144356,
+        "sha256": "ec7e3082080442a1b78f6dfd608473550105241a20de8bf852d149260b379ad7"
+      },
+      "cosmic_orbital_three_ball_lock_loaded_2.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 116190,
+        "partial_alpha_pixels": 1598,
+        "opaque_pixels": 144356,
+        "sha256": "d082798740b3f7d4dc0fb4fc57d7ee76070977c8a34c84c88df0144a316b2491"
+      },
+      "cosmic_orbital_three_ball_lock_loaded_3.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 116190,
+        "partial_alpha_pixels": 1598,
+        "opaque_pixels": 144356,
+        "sha256": "b8dab49fa1418711a5a486d4ad2c9df940378f4ec96bcf0814acf3ee120de147"
+      },
+      "ancient_sarcophagus_lock_loaded_0.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 116190,
+        "partial_alpha_pixels": 1598,
+        "opaque_pixels": 144356,
+        "sha256": "43c59dc320a55d86214c5d958dfe9531ef6df2fe65b07b27d0e9c36fffc63304"
+      },
+      "ancient_sarcophagus_lock_loaded_1.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 116190,
+        "partial_alpha_pixels": 1598,
+        "opaque_pixels": 144356,
+        "sha256": "b811e70c3bc59cf1e59c3665c4a5cca7d8d8d0ce8c74197ff213cb9995e961eb"
+      },
+      "ancient_sarcophagus_lock_loaded_2.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 116190,
+        "partial_alpha_pixels": 1598,
+        "opaque_pixels": 144356,
+        "sha256": "3589ae8840b7cb609f02b2f9d7c730825829297d5faeec32ce069989592c3c00"
+      },
+      "ancient_sarcophagus_lock_loaded_3.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 116190,
+        "partial_alpha_pixels": 1598,
+        "opaque_pixels": 144356,
+        "sha256": "24948ee2b10de993d3a7ebcbdb7c37f7d2d758d372ff99f623ceaf95a0604f99"
+      },
+      "volcanic_magma_kicker_compression_0.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 179406,
+        "partial_alpha_pixels": 1114,
+        "opaque_pixels": 81624,
+        "sha256": "170fff822879ad3ccb03ffc810c4aceede760c236868c084671601b42a674dfa"
+      },
+      "volcanic_magma_kicker_compression_1.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 179406,
+        "partial_alpha_pixels": 1114,
+        "opaque_pixels": 81624,
+        "sha256": "482650c441e407913d2bbee484302f140245d931bf784eec69645f5a33936af4"
+      },
+      "volcanic_magma_kicker_compression_2.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 179406,
+        "partial_alpha_pixels": 1114,
+        "opaque_pixels": 81624,
+        "sha256": "23669dd94aaa1dcfdcd744cd48a786bd97eb9e91395d15836e9f4389bb04fa91"
+      },
+      "volcanic_magma_kicker_compression_3.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 179406,
+        "partial_alpha_pixels": 1114,
+        "opaque_pixels": 81624,
+        "sha256": "d1187dfaa2d54e413fbbf123bc5d07bdfca934dae7752158c8cc43321958f0bd"
+      },
+      "ocean_pressure_launcher_compression_0.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 179406,
+        "partial_alpha_pixels": 1114,
+        "opaque_pixels": 81624,
+        "sha256": "6aa48f78ca371162b1150d3f35839e0ebc2ac89bf9b38a6b2962dccb39758f16"
+      },
+      "ocean_pressure_launcher_compression_1.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 179406,
+        "partial_alpha_pixels": 1114,
+        "opaque_pixels": 81624,
+        "sha256": "a337243ce8148caecae79671f924c2ff2b066fd024541dd1e279e6861207f986"
+      },
+      "ocean_pressure_launcher_compression_2.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 179406,
+        "partial_alpha_pixels": 1114,
+        "opaque_pixels": 81624,
+        "sha256": "c5f6dda3debac607dba3c25641a7f5cbf7fd0c7ee8385d4fef71b1c384aac7ad"
+      },
+      "ocean_pressure_launcher_compression_3.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 179406,
+        "partial_alpha_pixels": 1114,
+        "opaque_pixels": 81624,
+        "sha256": "bf7b65a1ac0453019a48791654f55fd20ff33376e08251834ad23a822c8e4932"
+      },
+      "ancient_scarab_dual_paddle_rotor_frame_00.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 118854,
+        "partial_alpha_pixels": 1581,
+        "opaque_pixels": 141709,
+        "sha256": "88dfe52782f436e94b73a2431ceb1d3f5bc7931a6b248d143f0e36f95faf8567"
+      },
+      "ancient_scarab_dual_paddle_rotor_frame_01.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 118854,
+        "partial_alpha_pixels": 1581,
+        "opaque_pixels": 141709,
+        "sha256": "9c54d853311f9d99c5d79e58eb0f50895bac8d9e784cbed77ea8c966ec10d040"
+      },
+      "ancient_scarab_dual_paddle_rotor_frame_02.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 118854,
+        "partial_alpha_pixels": 1581,
+        "opaque_pixels": 141709,
+        "sha256": "c977f56157c22dba7ae8710bea9cd2a06e89fffae2719d08b7437cfa8990023e"
+      },
+      "ancient_scarab_dual_paddle_rotor_frame_03.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 118854,
+        "partial_alpha_pixels": 1581,
+        "opaque_pixels": 141709,
+        "sha256": "b1399f14ec6edd6379a63049176ec851ef6a38eb3cf06de7fb777fdcc11de8ec"
+      },
+      "ancient_scarab_dual_paddle_rotor_frame_04.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 118854,
+        "partial_alpha_pixels": 1581,
+        "opaque_pixels": 141709,
+        "sha256": "aca17dfc708936bb1f2094b7fbe1c5c3a41c2fa6cdc7b92e88f520c11ac2167a"
+      },
+      "ancient_scarab_dual_paddle_rotor_frame_05.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 118854,
+        "partial_alpha_pixels": 1581,
+        "opaque_pixels": 141709,
+        "sha256": "2d792d26eba612588f6f63ebecefe0dd52b7621774e0c6b1333c4187a513c6ce"
+      },
+      "ancient_scarab_dual_paddle_rotor_frame_06.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 118854,
+        "partial_alpha_pixels": 1581,
+        "opaque_pixels": 141709,
+        "sha256": "086aed421de0d97fd84ca9a7d8effeca7e67a4c9cab4f4cea9f4d841794f23d6"
+      },
+      "ancient_scarab_dual_paddle_rotor_frame_07.png": {
+        "mode": "RGBA",
+        "size": [
+          512,
+          512
+        ],
+        "transparent_pixels": 118854,
+        "partial_alpha_pixels": 1581,
+        "opaque_pixels": 141709,
+        "sha256": "29eac7b8143cf49709a882047e901541317c0e516dcbea821205c6ef18611640"
+      }
+    }
+  }
+}

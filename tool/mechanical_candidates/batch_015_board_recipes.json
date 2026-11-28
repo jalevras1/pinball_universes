@@ -1,0 +1,159 @@
+{
+  "cosmic_black_hole_relay": {
+    "theme": "cosmic",
+    "identity": "two long counter-rotating orbital hairpins, central gravity capture",
+    "playfield_px": [
+      720,
+      1280
+    ],
+    "components": [
+      {
+        "asset_id": "cosmic_orbital_hairpin",
+        "x": 60,
+        "y": 80,
+        "scale": 0.8,
+        "rotation": 0
+      },
+      {
+        "asset_id": "cosmic_orbital_hairpin",
+        "x": 300,
+        "y": 90,
+        "scale": 0.8,
+        "rotation": 180
+      },
+      {
+        "asset_id": "cosmic_singularity",
+        "x": 250,
+        "y": 545,
+        "scale": 0.38,
+        "rotation": 0
+      }
+    ],
+    "objective": "hit paired orbital lanes to unlock hole release multiball"
+  },
+  "fantasy_drawbridge_fortress": {
+    "theme": "fantasy",
+    "identity": "one long ascending castle switchback, timed gate, fewer capture holes",
+    "playfield_px": [
+      720,
+      1280
+    ],
+    "components": [
+      {
+        "asset_id": "fantasy_castle_switchback",
+        "x": 140,
+        "y": 60,
+        "scale": 0.94,
+        "rotation": 0
+      },
+      {
+        "asset_id": "fantasy_castle_drawbridge",
+        "x": 205,
+        "y": 715,
+        "scale": 0.62,
+        "rotation": 0
+      }
+    ],
+    "objective": "open drawbridge by completing rune targets"
+  },
+  "cyber_security_grid": {
+    "theme": "cyber",
+    "identity": "tight zigzag ramp and independent locking gates with rotating central turbine",
+    "playfield_px": [
+      720,
+      1280
+    ],
+    "components": [
+      {
+        "asset_id": "cyber_twin_s_curve",
+        "x": 80,
+        "y": 70,
+        "scale": 0.9,
+        "rotation": 0
+      },
+      {
+        "asset_id": "cyber_rotor",
+        "x": 244,
+        "y": 605,
+        "scale": 0.42,
+        "rotation": 0
+      },
+      {
+        "asset_id": "cyber_security_gate",
+        "x": 225,
+        "y": 855,
+        "scale": 0.65,
+        "rotation": 0
+      }
+    ],
+    "objective": "synchronize gate cycle with ball routing"
+  },
+  "ancient_scarab_maze": {
+    "theme": "ancient",
+    "identity": "segmented stepped causeway around moving scarab spinner",
+    "playfield_px": [
+      720,
+      1280
+    ],
+    "components": [
+      {
+        "asset_id": "ancient_pharaoh_u_bridge",
+        "x": 110,
+        "y": 80,
+        "scale": 0.95,
+        "rotation": 0
+      },
+      {
+        "asset_id": "ancient_sunwheel",
+        "x": 270,
+        "y": 610,
+        "scale": 0.45,
+        "rotation": 0
+      }
+    ],
+    "objective": "charge sunwheel to unlock treasure alley"
+  },
+  "ocean_maelstrom_drift": {
+    "theme": "ocean",
+    "identity": "one wild wave-spiral crossing into a timed vortex release hole",
+    "playfield_px": [
+      720,
+      1280
+    ],
+    "components": [
+      {
+        "asset_id": "ocean_tidal_spiral",
+        "x": 135,
+        "y": 45,
+        "scale": 0.95,
+        "rotation": 0
+      },
+      {
+        "asset_id": "ocean_tidal_maelstrom",
+        "x": 261,
+        "y": 670,
+        "scale": 0.42,
+        "rotation": 0
+      }
+    ],
+    "objective": "redirect flow through whirlpool to alternate lane"
+  },
+  "volcanic_forge_run": {
+    "theme": "volcanic",
+    "identity": "rapid long path with alternating curves and a terminal forge kicker",
+    "playfield_px": [
+      720,
+      1280
+    ],
+    "components": [
+      {
+        "asset_id": "volcanic_forge_crossover",
+        "x": 110,
+        "y": 160,
+        "scale": 0.95,
+        "rotation": 0
+      }
+    ],
+    "objective": "build heat bonus by repeated ramp combos"
+  }
+}

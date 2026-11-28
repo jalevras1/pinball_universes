@@ -1,0 +1,579 @@
+{
+  "pack_name": "PINBALL_UNIVERSES_MECHANICAL_PACK_014",
+  "version": "1.0",
+  "status": "candidate - gameplay validation pending",
+  "coordinate_system": "512x512 PNG local coordinates, origin top-left; pixel coordinates are source-resolution and must be scaled with sprite",
+  "rendering": "RGBA transparent PNG; independent sprites; top down 2D",
+  "assets": [
+    {
+      "id": "pop_bumper_blue",
+      "type": "pop_bumper",
+      "dimensions": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/pop_bumper_blue_idle.png",
+        "sprites/pop_bumper_blue_hit.png",
+        "sprites/pop_bumper_blue_cooldown.png"
+      ],
+      "frame_states": [
+        "idle",
+        "hit",
+        "cooldown"
+      ],
+      "visual_center": [
+        256,
+        256
+      ],
+      "collision": {
+        "shape": "circle",
+        "cx": 256,
+        "cy": 256,
+        "radius": 177,
+        "tuning": "candidate; tune ball response and collider radius in engine"
+      },
+      "hit_animation_ms": [
+        0,
+        90,
+        170
+      ],
+      "source_attribution": "generated artwork and procedural states"
+    },
+    {
+      "id": "guide_rail_straight",
+      "type": "guide_rail",
+      "dimensions": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/guide_rail_straight.png"
+      ],
+      "collision": {
+        "shape": "polyline_capsules",
+        "centerline_points": [
+          [
+            65,
+            256
+          ],
+          [
+            447,
+            256
+          ]
+        ],
+        "radius": 21,
+        "note": "For curved segments use path-data vector geometry or piecewise capsule approximation with \u22646px interpolation tolerance"
+      },
+      "render_path_svg": "M 65 256 L 447 256"
+    },
+    {
+      "id": "guide_rail_elbow",
+      "type": "guide_rail",
+      "dimensions": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/guide_rail_elbow.png"
+      ],
+      "collision": {
+        "shape": "polyline_capsules",
+        "centerline_points": [
+          [
+            108,
+            444
+          ],
+          [
+            108,
+            230
+          ],
+          [
+            113,
+            190
+          ],
+          [
+            143,
+            144
+          ],
+          [
+            190,
+            113
+          ],
+          [
+            230,
+            108
+          ],
+          [
+            444,
+            108
+          ]
+        ],
+        "radius": 21,
+        "note": "For curved segments use path-data vector geometry or piecewise capsule approximation with \u22646px interpolation tolerance"
+      },
+      "render_path_svg": "M 108 444 L 108 230 Q 108 108 230 108 L 444 108"
+    },
+    {
+      "id": "guide_rail_s_bend",
+      "type": "guide_rail",
+      "dimensions": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/guide_rail_s_bend.png"
+      ],
+      "collision": {
+        "shape": "polyline_capsules",
+        "centerline_points": [
+          [
+            58,
+            366
+          ],
+          [
+            106,
+            357
+          ],
+          [
+            153,
+            285
+          ],
+          [
+            190,
+            207
+          ],
+          [
+            235,
+            155
+          ],
+          [
+            279,
+            148
+          ],
+          [
+            324,
+            156
+          ],
+          [
+            365,
+            228
+          ],
+          [
+            410,
+            330
+          ],
+          [
+            454,
+            362
+          ]
+        ],
+        "radius": 21,
+        "note": "For curved segments use path-data vector geometry or piecewise capsule approximation with \u22646px interpolation tolerance"
+      },
+      "render_path_svg": "M 58 366 C 185 366 153 148 279 148 C 415 148 372 362 454 362"
+    },
+    {
+      "id": "guide_rail_u_turn",
+      "type": "guide_rail",
+      "dimensions": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/guide_rail_u_turn.png"
+      ],
+      "collision": {
+        "shape": "polyline_capsules",
+        "centerline_points": [
+          [
+            82,
+            443
+          ],
+          [
+            82,
+            228
+          ],
+          [
+            102,
+            144
+          ],
+          [
+            169,
+            103
+          ],
+          [
+            256,
+            100
+          ],
+          [
+            343,
+            103
+          ],
+          [
+            410,
+            144
+          ],
+          [
+            430,
+            228
+          ],
+          [
+            430,
+            443
+          ]
+        ],
+        "radius": 21,
+        "note": "For curved segments use path-data vector geometry or piecewise capsule approximation with \u22646px interpolation tolerance"
+      },
+      "render_path_svg": "M 82 443 L 82 228 C 82 59 430 59 430 228 L 430 443"
+    },
+    {
+      "id": "slingshot_left",
+      "type": "slingshot",
+      "dimensions": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/slingshot_left_idle.png",
+        "sprites/slingshot_left_hit.png"
+      ],
+      "frame_states": [
+        "idle",
+        "hit"
+      ],
+      "collision": {
+        "shape": "polygon",
+        "points": [
+          [
+            92,
+            88
+          ],
+          [
+            434,
+            272
+          ],
+          [
+            111,
+            439
+          ],
+          [
+            85,
+            424
+          ]
+        ],
+        "note": "Approximate visible physical perimeter; gameplay tuning required"
+      },
+      "hit_animation_ms": [
+        0,
+        105
+      ]
+    },
+    {
+      "id": "slingshot_right",
+      "type": "slingshot",
+      "dimensions": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/slingshot_right_idle.png",
+        "sprites/slingshot_right_hit.png"
+      ],
+      "frame_states": [
+        "idle",
+        "hit"
+      ],
+      "collision": {
+        "shape": "polygon",
+        "points": [
+          [
+            420,
+            88
+          ],
+          [
+            78,
+            272
+          ],
+          [
+            401,
+            439
+          ],
+          [
+            427,
+            424
+          ]
+        ],
+        "note": "Approximate visible physical perimeter; gameplay tuning required"
+      },
+      "hit_animation_ms": [
+        0,
+        105
+      ]
+    },
+    {
+      "id": "capture_hole_violet",
+      "type": "capture_hole",
+      "dimensions": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/capture_hole_violet.png"
+      ],
+      "collision": {
+        "shape": "circle_trigger",
+        "cx": 256,
+        "cy": 256,
+        "radius": 121,
+        "behavior": "on_ball_enter trigger event, not a solid collider; must be resolved by gameplay logic"
+      },
+      "theme": "cosmic"
+    },
+    {
+      "id": "capture_hole_amber",
+      "type": "capture_hole",
+      "dimensions": [
+        512,
+        512
+      ],
+      "frames": [
+        "sprites/capture_hole_amber.png"
+      ],
+      "collision": {
+        "shape": "circle_trigger",
+        "cx": 256,
+        "cy": 256,
+        "radius": 121,
+        "behavior": "on_ball_enter trigger event, not a solid collider; must be resolved by gameplay logic"
+      },
+      "theme": "volcanic"
+    }
+  ],
+  "quality_checks": {
+    "passed": [
+      "RGBA PNG",
+      "512x512 uniform canvas",
+      "nonempty sprite",
+      "transparent corner and background",
+      "collision metadata present"
+    ],
+    "requires_in_game": [
+      "confirm collision and ball response",
+      "verify no visual mismatch to existing machine scale",
+      "test reduced-scale mobile readability",
+      "test in Flutter Flame rendering"
+    ],
+    "file_results": {
+      "capture_hole_amber.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 100741,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          30,
+          30,
+          482,
+          482
+        ],
+        "bytes": 164919
+      },
+      "capture_hole_violet.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 100741,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          30,
+          30,
+          482,
+          482
+        ],
+        "bytes": 168705
+      },
+      "guide_rail_elbow.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 219903,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          80,
+          80,
+          474,
+          477
+        ],
+        "bytes": 50276
+      },
+      "guide_rail_s_bend.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 220145,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          30,
+          120,
+          484,
+          399
+        ],
+        "bytes": 80967
+      },
+      "guide_rail_straight.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 234730,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          37,
+          228,
+          477,
+          289
+        ],
+        "bytes": 12419
+      },
+      "guide_rail_u_turn.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 203146,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          54,
+          73,
+          460,
+          476
+        ],
+        "bytes": 75891
+      },
+      "pop_bumper_blue_cooldown.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 125351,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          47,
+          41,
+          465,
+          471
+        ],
+        "bytes": 308661
+      },
+      "pop_bumper_blue_hit.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 54270,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          35,
+          35,
+          478,
+          478
+        ],
+        "bytes": 315303
+      },
+      "pop_bumper_blue_idle.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 125351,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          47,
+          41,
+          465,
+          471
+        ],
+        "bytes": 338710
+      },
+      "slingshot_left_hit.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 165707,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          80,
+          64,
+          451,
+          449
+        ],
+        "bytes": 146018
+      },
+      "slingshot_left_idle.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 180231,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          80,
+          64,
+          451,
+          449
+        ],
+        "bytes": 100169
+      },
+      "slingshot_right_hit.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 165711,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          61,
+          64,
+          432,
+          449
+        ],
+        "bytes": 143369
+      },
+      "slingshot_right_idle.png": {
+        "rgba": true,
+        "size": [
+          512,
+          512
+        ],
+        "empty_pixels": 180249,
+        "edge_top_left_alpha": 0,
+        "nonempty_bbox": [
+          61,
+          64,
+          432,
+          449
+        ],
+        "bytes": 98549
+      }
+    }
+  }
+}

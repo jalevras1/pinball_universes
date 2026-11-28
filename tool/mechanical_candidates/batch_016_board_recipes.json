@@ -1,0 +1,169 @@
+{
+  "cosmic_orbital_prison": {
+    "universe": "cosmic",
+    "layout_class": "sparse two-layer orbit and central multiball lock",
+    "target_board_size_px": [
+      720,
+      1280
+    ],
+    "obstacles": [
+      {
+        "asset_id": "cosmic_orbital_three_ball_lock",
+        "x": 200,
+        "y": 100,
+        "scale": 0.62
+      },
+      {
+        "asset_id": "cosmic_orbital_hairpin",
+        "pack": "015",
+        "x": 100,
+        "y": 500,
+        "scale": 0.72
+      },
+      {
+        "asset_id": "cosmic_singularity",
+        "pack": "015",
+        "x": 280,
+        "y": 830,
+        "scale": 0.3
+      }
+    ],
+    "goal": "charge three capture chambers by repeated orbital ramp shots"
+  },
+  "fantasy_castle_siege": {
+    "universe": "fantasy",
+    "layout_class": "offset forked tunnel and drawbridge defense",
+    "target_board_size_px": [
+      720,
+      1280
+    ],
+    "obstacles": [
+      {
+        "asset_id": "fantasy_forked_stone_tunnel",
+        "x": 85,
+        "y": 270,
+        "scale": 0.86
+      },
+      {
+        "asset_id": "fantasy_castle_drawbridge",
+        "pack": "015",
+        "x": 277,
+        "y": 700,
+        "scale": 0.55
+      }
+    ],
+    "goal": "unlock castle keep via timed drawbridge and alternate subterranean tunnel"
+  },
+  "cyber_security_chase": {
+    "universe": "cyber",
+    "layout_class": "high-speed moving blockade through intersecting lanes",
+    "target_board_size_px": [
+      720,
+      1280
+    ],
+    "obstacles": [
+      {
+        "asset_id": "cyber_crossing_underpass",
+        "x": 155,
+        "y": 165,
+        "scale": 0.77
+      },
+      {
+        "asset_id": "cyber_magnetic_shuttle",
+        "x": 180,
+        "y": 725,
+        "scale": 0.65
+      },
+      {
+        "asset_id": "cyber_security_gate",
+        "pack": "015",
+        "x": 88,
+        "y": 1000,
+        "scale": 0.52
+      }
+    ],
+    "goal": "hit moving blocker safely to redirect ball toward data core"
+  },
+  "ancient_pharaoh_lock": {
+    "universe": "ancient",
+    "layout_class": "dense spinning rotor and triple sarcophagus capture",
+    "target_board_size_px": [
+      720,
+      1280
+    ],
+    "obstacles": [
+      {
+        "asset_id": "ancient_sarcophagus_lock",
+        "x": 214,
+        "y": 125,
+        "scale": 0.55
+      },
+      {
+        "asset_id": "ancient_scarab_dual_paddle_rotor",
+        "x": 290,
+        "y": 620,
+        "scale": 0.34
+      }
+    ],
+    "goal": "stop rotor at correct position to access pharaoh jackpot lock"
+  },
+  "ocean_pressure_labyrinth": {
+    "universe": "ocean",
+    "layout_class": "split-level reef with off-center jet launcher and aquatic barrier",
+    "target_board_size_px": [
+      720,
+      1280
+    ],
+    "obstacles": [
+      {
+        "asset_id": "ocean_reef_twin_current",
+        "x": 70,
+        "y": 110,
+        "scale": 0.93
+      },
+      {
+        "asset_id": "ocean_tidal_floodgate",
+        "x": 270,
+        "y": 740,
+        "scale": 0.53
+      },
+      {
+        "asset_id": "ocean_pressure_launcher",
+        "x": 510,
+        "y": 745,
+        "scale": 0.38
+      }
+    ],
+    "goal": "toggle floodgate while surfing raised-current channel into alternate return"
+  },
+  "volcanic_bulkhead_gauntlet": {
+    "universe": "volcanic",
+    "layout_class": "narrow hazard corridor with molten retractable barrier and piston ejector",
+    "target_board_size_px": [
+      720,
+      1280
+    ],
+    "obstacles": [
+      {
+        "asset_id": "volcanic_forge_bulkhead",
+        "x": 178,
+        "y": 180,
+        "scale": 0.7
+      },
+      {
+        "asset_id": "volcanic_magma_kicker",
+        "x": 266,
+        "y": 660,
+        "scale": 0.62
+      },
+      {
+        "asset_id": "volcanic_forge_crossover",
+        "pack": "015",
+        "x": 84,
+        "y": 90,
+        "scale": 0.72
+      }
+    ],
+    "goal": "open forge bulkhead to blast from kicker through crossover"
+  }
+}
